@@ -4,6 +4,15 @@
 #define RAM_SIZE 128
 #define ROM_SIZE 4096
 
+#define PSW_CY_POS 7
+#define PSW_AC_POS 6
+#define PSW_F0_POS 5
+#define PSW_RS1_POS 4
+#define PSW_RS0_POS 3
+#define PSW_OV_POS 2
+//#define PSW_CY_POS 1
+#define PSW_P_POS 0
+
 #define PSW_CY getPSW(7)
 #define PSW_AC getPSW(6)
 #define PSW_F0 getPSW(5)
@@ -22,6 +31,7 @@
 #define R6 (*R6p)
 #define R7 (*R7p)
 
+typedef bool bit;
 typedef unsigned char byte;
 typedef short int word;
 
@@ -38,6 +48,9 @@ byte psw = 0x00;
 
 short int register_bank = 0;
 byte *R0p, *R1p, *R2p, *R3p, *R4p, *R5p, *R6p, *R7p, *R8p;
+
+bit getBit(byte address);
+void writeBit(bit val, byte address);
 
 bool getPSW(short int pos);
 void setPSW(short int pos, bool val);
@@ -69,7 +82,7 @@ void start_emu()
 	a = 0x01;
 	while(true)
 	{
-		if(pc == 968)//ROM_SIZE - 1)
+		if(pc == 968)// ROM_SIZE - 1)
 		{
 			fprintf(stderr, "end of ROM reached pc=%0X\n", pc);
 			return;
@@ -77,6 +90,10 @@ void start_emu()
 		if(rom[pc - 2] == 0x74 && rom[pc - 1] == 0x69)
 			return;
 		byte opcode = rom[pc];
+
+		bool tmp;
+		byte tmpByte;
+		word tmpWord;
 		switch(opcode)
 		{
 			// INC
@@ -235,144 +252,696 @@ void start_emu()
 				break;
 			
 			// MOV
-				case 0x76: // MOV @R0,#data	
-					ram[R0] = rom[++pc];
-					break;
-				case 0x77: // MOV @R1,#data	
-					ram[R1] = rom[++pc];
-					break;
-				case 0xF6: // MOV @R0,A	
-					ram[R0] = a;
-					break;
-				case 0xF7: // MOV @R1,A	
-					ram[R1] = a;
-					break;
-				case 0xA6: // MOV @R0,iram addr	
-					ram[R0] = ram[rom[++pc]];
-					break;
-				case 0xA7: // MOV @R1,iram addr	
-					ram[R1] = ram[rom[++pc]];
-					break;
-				case 0x74: // MOV A,#data	
-					a = rom[++pc];
-					break;
-				case 0xE6: // MOV A,@R0	
-					a = ram[R0];
-					break;
-				case 0xE7: // MOV A,@R1	
-					a = ram[R1];
-					break;
-				case 0xE8: // MOV A,R0	
-					a = R0;
-					break;
-				case 0xE9: // MOV A,R1	
-					a = R1;
-					break;
-				case 0xEA: // MOV A,R2	
-					a = R2;
-					break;
-				case 0xEB: // MOV A,R3	
-					a = R3;
-					break;
-				case 0xEC: // MOV A,R4	
-					a = R4;
-					break;
-				case 0xED: // MOV A,R5	
-					a = R5;
-					break;
-				case 0xEE: // MOV A,R6	
-					a = R6;
-					break;
-				case 0xEF: // MOV A,R7	
-					a = R7;
-					break;
-				case 0xE5: // MOV A,iram addr	
-					a = ram[rom[++pc]];
-					break;
-				case 0xA2: // MOV C,bit addr	// TODO
-					setPSW(7, ram[rom[89]]);
-					break;
-				case 0x90: // MOV DPTR,#data16	
-					dptr = (pc + 1) << 8 | (pc + 2);
-					pc += 2;
-					break;
-				case 0x78: // MOV R0,#data	
-					break;
-				case 0x79: // MOV R1,#data	
-					break;
-				case 0x7A: // MOV R2,#data	
-					break;
-				case 0x7B: // MOV R3,#data	
-					break;
-				case 0x7C: // MOV R4,#data	
-					break;
-				case 0x7D: // MOV R5,#data	
-					break;
-				case 0x7E: // MOV R6,#data	
-					break;
-				case 0x7F: // MOV R7,#data	
-					break;
-				case 0xF8: // MOV R0,A	
-					break;
-				case 0xF9: // MOV R1,A	
-					break;
-				case 0xFA: // MOV R2,A	
-					break;
-				case 0xFB: // MOV R3,A	
-					break;
-				case 0xFC: // MOV R4,A	
-					break;
-				case 0xFD: // MOV R5,A	
-					break;
-				case 0xFE: // MOV R6,A	
-					break;
-				case 0xFF: // MOV R7,A	
-					break;
-				case 0xA8: // MOV R0,iram addr	
-					break;
-				case 0xA9: // MOV R1,iram addr	
-					break;
-				case 0xAA: // MOV R2,iram addr	
-					break;
-				case 0xAB: // MOV R3,iram addr	
-					break;
-				case 0xAC: // MOV R4,iram addr	
-					break;
-				case 0xAD: // MOV R5,iram addr	
-					break;
-				case 0xAE: // MOV R6,iram addr	
-					break;
-				case 0xAF: // MOV R7,iram addr	
-					break;
-				case 0x92: // MOV bit addr,C	
-					break;
-				case 0x75: // MOV iram addr,#data	
-					break;
-				case 0x86: // MOV iram addr,@R0	
-					break;
-				case 0x87: // MOV iram addr,@R1	
-					break;
-				case 0x88: // MOV iram addr,R0	
-					break;
-				case 0x89: // MOV iram addr,R1	
-					break;
-				case 0x8A: // MOV iram addr,R2	
-					break;
-				case 0x8B: // MOV iram addr,R3	
-					break;
-				case 0x8C: // MOV iram addr,R4	
-					break;
-				case 0x8D: // MOV iram addr,R5	
-					break;
-				case 0x8E: // MOV iram addr,R6	
-					break;
-				case 0x8F: // MOV iram addr,R7	
-					break;
-				case 0xF5: // MOV iram addr,A	
-					break;
-				case 0x85: // MOV iram addr,iram addr	
-					break;
+			case 0x76: // MOV @R0,#data	
+				ram[R0] = rom[++pc];
+				break;
+			case 0x77: // MOV @R1,#data	
+				ram[R1] = rom[++pc];
+				break;
+			case 0xF6: // MOV @R0,A	
+				ram[R0] = a;
+				break;
+			case 0xF7: // MOV @R1,A	
+				ram[R1] = a;
+				break;
+			case 0xA6: // MOV @R0,iram addr	
+				ram[R0] = ram[rom[++pc]];
+				break;
+			case 0xA7: // MOV @R1,iram addr	
+				ram[R1] = ram[rom[++pc]];
+				break;
+			case 0x74: // MOV A,#data	
+				a = rom[++pc];
+				break;
+			case 0xE6: // MOV A,@R0	
+				a = ram[R0];
+				break;
+			case 0xE7: // MOV A,@R1	
+				a = ram[R1];
+				break;
+			case 0xE8: // MOV A,R0	
+				a = R0;
+				break;
+			case 0xE9: // MOV A,R1	
+				a = R1;
+				break;
+			case 0xEA: // MOV A,R2	
+				a = R2;
+				break;
+			case 0xEB: // MOV A,R3	
+				a = R3;
+				break;
+			case 0xEC: // MOV A,R4	
+				a = R4;
+				break;
+			case 0xED: // MOV A,R5	
+				a = R5;
+				break;
+			case 0xEE: // MOV A,R6	
+				a = R6;
+				break;
+			case 0xEF: // MOV A,R7	
+				a = R7;
+				break;
+			case 0xE5: // MOV A,iram addr	
+				a = ram[rom[++pc]];
+				break;
+			case 0xA2: // MOV C,bit addr
+				setPSW(PSW_CY_POS, getBit( rom[++pc] ));
+				break;
+			case 0x90: // MOV DPTR,#data16	
+				dptr = (pc + 1) << 8 | (pc + 2);
+				pc += 2;
+				break;
+			case 0x78: // MOV R0,#data	
+				R0 = rom[++pc];
+				break;
+			case 0x79: // MOV R1,#data	
+				R1 = rom[++pc];
+				break;
+			case 0x7A: // MOV R2,#data	
+				R2 = rom[++pc];
+				break;
+			case 0x7B: // MOV R3,#data	
+				R3 = rom[++pc];
+				break;
+			case 0x7C: // MOV R4,#data	
+				R4 = rom[++pc];
+				break;
+			case 0x7D: // MOV R5,#data	
+				R5 = rom[++pc];
+				break;
+			case 0x7E: // MOV R6,#data	
+				R6 = rom[++pc];
+				break;
+			case 0x7F: // MOV R7,#data	
+				R7 = rom[++pc];
+				break;
+			case 0xF8: // MOV R0,A	
+				R0 = a;
+				break;
+			case 0xF9: // MOV R1,A	
+				R1 = a;
+				break;
+			case 0xFA: // MOV R2,A	
+				R2 = a;
+				break;
+			case 0xFB: // MOV R3,A	
+				R3 = a;
+				break;
+			case 0xFC: // MOV R4,A	
+				R4 = a;
+				break;
+			case 0xFD: // MOV R5,A	
+				R5 = a;
+				break;
+			case 0xFE: // MOV R6,A	
+				R6 = a;
+				break;
+			case 0xFF: // MOV R7,A	
+				R7 = a;
+				break;
+			case 0xA8: // MOV R0,iram addr	
+				R0 = ram[rom[++pc]];
+				break;
+			case 0xA9: // MOV R1,iram addr	
+				R1 = ram[rom[++pc]];
+				break;
+			case 0xAA: // MOV R2,iram addr	
+				R2 = ram[rom[++pc]];
+				break;
+			case 0xAB: // MOV R3,iram addr	
+				R3 = ram[rom[++pc]];
+				break;
+			case 0xAC: // MOV R4,iram addr	
+				R4 = ram[rom[++pc]];
+				break;
+			case 0xAD: // MOV R5,iram addr	
+				R5 = ram[rom[++pc]];
+				break;
+			case 0xAE: // MOV R6,iram addr	
+				R6 = ram[rom[++pc]];
+				break;
+			case 0xAF: // MOV R7,iram addr	
+				R7 = ram[rom[++pc]];
+				break;
+			case 0x92: // MOV bit addr,C
+				writeBit(PSW_CY, rom[++pc]);
+				break;
+			case 0x75: // MOV iram addr,#data
+				ram[rom[pc + 1]] = rom[pc + 2];
+				pc += 2;
+				break;
+			case 0x86: // MOV iram addr,@R0
+				ram[rom[++pc]] = ram[R0];
+				break;
+			case 0x87: // MOV iram addr,@R1	
+				ram[rom[++pc]] = ram[R1];
+				break;
+			case 0x88: // MOV iram addr,R0	
+				ram[rom[++pc]] = R0;
+				break;
+			case 0x89: // MOV iram addr,R1	
+				ram[rom[++pc]] = R1;
+				break;
+			case 0x8A: // MOV iram addr,R2	
+				ram[rom[++pc]] = R2;
+				break;
+			case 0x8B: // MOV iram addr,R3	
+				ram[rom[++pc]] = R3;
+				break;
+			case 0x8C: // MOV iram addr,R4	
+				ram[rom[++pc]] = R4;
+				break;
+			case 0x8D: // MOV iram addr,R5	
+				ram[rom[++pc]] = R5;
+				break;
+			case 0x8E: // MOV iram addr,R6	
+				ram[rom[++pc]] = R6;
+				break;
+			case 0x8F: // MOV iram addr,R7	
+				ram[rom[++pc]] = R7;
+				break;
+			case 0xF5: // MOV iram addr,A	
+				ram[rom[++pc]] = a;
+				break;
+			case 0x85: // MOV iram addr,iram addr	
+				ram[rom[pc + 1]] = ram[rom[pc + 2]];
+				pc += 2;
+				break;
 
+			// ORL
+			case 0x42: // ORL iram addr,A
+				ram[rom[pc + 1]] = ram[rom[pc + 1]] | a;
+				pc++;
+				break;
+			case 0x43: // ORL iram addr,#data
+				ram[rom[pc + 1]] = ram[rom[pc + 1]] | rom[pc + 1];
+				pc++;
+				break;
+			case 0x44: // ORL A,#data
+				a = a | rom[++pc];
+				break;
+			case 0x45: // ORL A,iram addr
+				a = a | ram[rom[++pc]];
+				break;
+			case 0x46: // ORL A,@R0
+				a = a | ram[R0];
+				break;
+			case 0x47: // ORL A,@R1
+				a = a | ram[R1];
+				break;
+			case 0x48: // ORL A,R0
+				a = a | R0;
+				break;
+			case 0x49: // ORL A,R1
+				a = a | R1;
+				break;
+			case 0x4A: // ORL A,R2
+				a = a | R2;
+				break;
+			case 0x4B: // ORL A,R3
+				a = a | R3;
+				break;
+			case 0x4C: // ORL A,R4
+				a = a | R4;
+				break;
+			case 0x4D: // ORL A,R5
+				a = a | R5;
+				break;
+			case 0x4E: // ORL A,R6
+				a = a | R6;
+				break;
+			case 0x4F: // ORL A,R7
+				a = a | R7;
+				break;
+			case 0x72: // ORL C,bit addr
+				setPSW(PSW_CY_POS, PSW_CY | getBit( rom[++pc] ));
+				break;
+			case 0xA0: // ORL C,/bit addr // TODO
+				fprintf(stderr, "opcode undefined: ORL C,/bit addr\n");
+				break;
+
+			// AND
+			case 0x52: // ANL iram addr,A
+				ram[rom[pc + 1]] = ram[rom[pc + 1]] & a;
+				pc++;
+				break;
+			case 0x53: // ANL iram addr,#data
+				ram[rom[pc + 1]] = ram[rom[pc + 1]] | rom[pc + 1];
+				pc++;
+				break;
+			case 0x54: // ANL A,#data
+				a = a & rom[++pc];
+				break;
+			case 0x55: // ANL A,iram addr
+				a = a & ram[rom[++pc]];
+				break;
+			case 0x56: // ANL A,@R0
+				a = a & ram[R0];
+				break;
+			case 0x57: // ANL A,@R1
+				a = a & ram[R1];
+				break;
+			case 0x58: // ANL A,R0
+				a = a & R0;
+				break;
+			case 0x59: // ANL A,R1
+				a = a & R1;
+				break;
+			case 0x5A: // ANL A,R2
+				a = a & R2;
+				break;
+			case 0x5B: // ANL A,R3
+				a = a & R3;
+				break;
+			case 0x5C: // ANL A,R4
+				a = a & R4;
+				break;
+			case 0x5D: // ANL A,R5
+				a = a & R5;
+				break;
+			case 0x5E: // ANL A,R6
+				a = a & R6;
+				break;
+			case 0x5F: // ANL A,R7
+				a = a & R7;
+				break;
+			case 0x82: // ANL C,bit addr
+				setPSW(PSW_CY_POS, PSW_CY & getBit( rom[++pc] ));
+				break;
+			case 0xB0: // ANL C,/bit addr // TODO
+				fprintf(stderr, "opcode undefined: ANL C,/bit addr\n");
+				break;
+
+			// XRL
+			case 0x62: // XRL iram addr,A
+				ram[rom[ pc + 1 ]] = ram[rom[ pc + 1 ]] ^ a;
+				pc++;
+				break;
+			case 0x63: // XRL iram addr,#data
+				ram[rom[ pc + 1 ]] = ram[rom[ pc + 1 ]] ^ rom[ pc + 1];
+				pc++;
+				break;
+			case 0x64: // XRL A,#data
+				a = a ^ rom[++pc];
+				break;
+			case 0x65: // XRL A,iram addr
+				a = a ^ ram[rom[++pc]];
+				break;
+			case 0x66: // XRL A,@R0
+				a = a ^ ram[R0];
+				break;
+			case 0x67: // XRL A,@R1
+				a = a ^ ram[R1];
+				break;
+			case 0x68: // XRL A,R0
+				a = a ^ R0;
+				break;
+			case 0x69: // XRL A,R1
+				a = a ^ R1;
+				break;
+			case 0x6A: // XRL A,R2
+				a = a ^ R2;
+				break;
+			case 0x6B: // XRL A,R3
+				a = a ^ R3;
+				break;
+			case 0x6C: // XRL A,R4
+				a = a ^ R4;
+				break;
+			case 0x6D: // XRL A,R5
+				a = a ^ R5;
+				break;
+			case 0x6E: // XRL A,R6
+				a = a ^ R6;
+				break;
+			case 0x6F: // XRL A,R7
+				a = a ^ R7;
+				break;
+
+			// DJNZ
+			case 0xD5: // DJNZ iram addr,reladdr
+				pc = --ram[rom[++pc]] ? rom[pc + 1] - 1 : pc;
+				pc++;
+				break;
+			case 0xD8: // DJNZ R0,reladdr
+				pc = --ram[R0] ? rom[ pc + 1 ] : pc;
+				pc++;
+				break;
+			case 0xD9: // DJNZ R1,reladdr
+				pc = --ram[R1] ? rom[ pc + 1 ] : pc;
+				pc++;
+				break;
+			case 0xDA: // DJNZ R2,reladdr
+				pc = --ram[R2] ? rom[ pc + 1 ] : pc;
+				pc++;
+				break;
+			case 0xDB: // DJNZ R3,reladdr
+				pc = --ram[R3] ? rom[ pc + 1 ] : pc;
+				pc++;
+				break;
+			case 0xDC: // DJNZ R4,reladdr
+				pc = --ram[R4] ? rom[ pc + 1 ] : pc;
+				pc++;
+				break;
+			case 0xDD: // DJNZ R5,reladdr
+				pc = --ram[R5] ? rom[ pc + 1 ] : pc;
+				pc++;
+				break;
+			case 0xDE: // DJNZ R6,reladdr
+				pc = --ram[R6] ? rom[ pc + 1 ] : pc;
+				pc++;
+				break;
+			case 0xDF: // DJNZ R7,reladdr
+				pc = --ram[R7] ? rom[ pc + 1 ] : pc;
+				pc++;
+				break;
+
+			// CJNE
+			case 0xB4: // CJNE A,#data,reladdr
+				pc = (a == rom[ pc + 1 ]) ? pc : rom[ pc + 2 ] - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xB5: // CJNE A,iram addr,reladdr
+				pc = (a == ram[rom[ pc + 1 ]]) ? pc : ram[rom[ pc + 2 ]] - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xB6: // CJNE @R0,#data,reladdr
+				pc = (a == ram[R0]) ? pc : ram[R0] - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xB7: // CJNE @R1,#data,reladdr
+				pc = (a == ram[R1]) ? pc : ram[R1] - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xB8: // CJNE R0,#data,reladdr
+				pc = (a == R0) ? pc : R0 - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xB9: // CJNE R1,#data,reladdr
+				pc = (a == R1) ? pc : R1 - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xBA: // CJNE R2,#data,reladdr
+				pc = (a == R2) ? pc : R2 - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xBB: // CJNE R3,#data,reladdr
+				pc = (a == R3) ? pc : R3 - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xBC: // CJNE R4,#data,reladdr
+				pc = (a == R4) ? pc : R4 - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xBD: // CJNE R5,#data,reladdr
+				pc = (a == R5) ? pc : R5 - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xBE: // CJNE R6,#data,reladdr
+				pc = (a == R6) ? pc : R6 - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			case 0xBF: // CJNE R7,#data,reladdr
+				pc = (a == R7) ? pc : R7 - 1;
+				setPSW( 7, ( a < rom[ pc + 1 ]));
+				pc++;
+				break;
+			
+			// JC
+			case 0x40:
+				if (PSW_CY)
+					pc = rom[ pc + 1 ];
+				else
+					pc++;
+				break;
+			// JNC
+			case 0x50:
+				if (!PSW_CY)
+					pc = rom[ pc + 1 ];
+				else
+					pc++;
+				break;
+			// JZ
+			case 0x60:
+				if (!a)
+					pc = rom[ pc + 1 ];
+				else
+					pc++;
+				break;
+			// JNZ
+			case 0x70:
+				if (a)
+					pc = rom[ pc + 1 ];
+				else
+					pc++;
+				break;
+			// SJMP
+			case 0x80: // SJMP reladdr
+				pc = rom[ pc + 1 ];
+				break;
+			// RR A
+			case 0x03:
+				a = a >> 1 | (a & 0b00000001) << 7;
+				break;
+			// RL A
+			case 0x23:
+				a = a << 1 | (a & 0b10000000) >> 7;
+				break;
+			// RRC A
+			case 0x13:
+				tmp = a & 0b00000001;
+				a = a >> 1 | ( PSW_CY << 7);
+				setPSW(PSW_CY_POS, tmp);
+				break;
+			// RLC A
+			case 0x33:
+				tmp = (a & 0b10000000) >> 7;
+				a = a << 1 |  (byte)PSW_CY;
+				setPSW(PSW_CY_POS, tmp);
+				break;
+			
+			// XCH
+			case 0xC6: // XCH A,@R0
+				tmpByte = a;
+				a = ram[R0];
+				ram[R0] = tmpByte;
+				break;
+			case 0xC7: // XCH A,@R1
+				tmpByte = a;
+				a = ram[R1];
+				ram[R1] = tmpByte;
+				break;
+			case 0xC8: // XCH A,R0
+				tmpByte = a;
+				a = R0;
+				R0 = tmpByte;
+				break;
+			case 0xC9: // XCH A,R1
+				tmpByte = a;
+				a = R1;
+				R1 = tmpByte;
+				break;
+			case 0xCA: // XCH A,R2
+				tmpByte = a;
+				a = R2;
+				R2 = tmpByte;
+				break;
+			case 0xCB: // XCH A,R3
+				tmpByte = a;
+				a = R3;
+				R3 = tmpByte;
+				break;
+			case 0xCC: // XCH A,R4
+				tmpByte = a;
+				a = R4;
+				R4 = tmpByte;
+				break;
+			case 0xCD: // XCH A,R5
+				tmpByte = a;
+				a = R5;
+				R5 = tmpByte;
+				break;
+			case 0xCE: // XCH A,R6
+				tmpByte = a;
+				a = R6;
+				R6 = tmpByte;
+				break;
+			case 0xCF: // XCH A,R7
+				tmpByte = a;
+				a = R7;
+				R7 = tmpByte;
+				break;
+			case 0xC5: // XCH A,iram addr
+				tmpByte = a;
+				a = ram[ rom[ pc + 1]];
+				rom[ rom[ pc + 1 ]] = tmpByte;
+				pc++;
+				break;
+
+			// XCHD
+			case 0xD6: // XCHD A,@R0
+				tmpByte = a & 0b00001111;
+				a = a & 0b11110000 | ram[R0] & 0b00001111;
+				ram[R0] = ram[R0] & 0b11110000 | tmpByte & 0b00001111;
+				break;
+			case 0xD7: // XCHD A,@R1
+				tmpByte = a & 0b00001111;
+				a = a & 0b11110000 | ram[R1] & 0b00001111;
+				ram[R1] = ram[R1] & 0b11110000 | tmpByte & 0b00001111;
+				break;
+
+			// SWAP
+			case 0xC4: // SWAP A
+			    tmpByte = a & 0b00001111;
+			    a = a >> 4 | tmpByte << 4;
+			    break;
+
+			// DA
+			case 0xD4: // DA
+				if ( (a & 0x0F) > 9 )
+					add_to_A(0x06);
+				if ( (((a & 0xF0) >> 4) > 9) | PSW_CY )
+					add_to_A(0x60);
+				break;
+
+			// PUSH
+			case 0xC0: // PUSH iram addr
+				ram[ ++sp ] = ram[rom[ ++pc ]];
+				break;
+			// POP
+			case 0xD0: // POP iram addr
+				ram[rom[ ++pc ]] = ram[ sp-- ];
+				break;
+
+			// CPL
+			case 0xF4: // CPL A
+				a = !a;
+				break;
+			case 0xB3: // CPL C
+				setPSW(PSW_CY_POS, !PSW_CY);
+				break;
+			case 0xB2: // CPL bit addr
+				writeBit( !getBit( rom[ pc + 1 ] ), rom[ pc + 1 ] );
+				pc++;
+				break;
+
+			// CLR
+			case 0xC2: // CLR bit addr
+				writeBit( 0, rom[ ++pc ] );
+				break;
+			case 0xC3: // CLR C
+				setPSW(PSW_CY_POS, 0);
+				break;
+			case 0xE4: // CLR A
+				a = 0;
+				break;
+
+			// SETB
+			case 0xD3: // SETB C
+				setPSW(PSW_CY_POS, 1);
+				break;
+			case 0xD2: // SETB bit addr
+				writeBit( 1, rom[ ++pc ] );
+				break;
+
+			// DIV
+			case 0x84: // DIV AB
+				tmpByte = a / b;
+				b = a % b;
+				a = tmpByte;
+				break;
+
+			case 0xA4: // MUL AB
+				tmpWord = a * b;
+				a = tmpWord & 0x00FF;
+				b = (tmpWord & 0xFF00) >> 8;
+				break;
+
+			case 0x73: // JMP @A+DPTR
+				pc = a + dptr - 1;
+				break;
+
+			// SUBB
+			case 0x94: // SUBB A,#data
+				sub_from_A( rom[ ++pc ] );
+				break;
+			case 0x95: // SUBB A,iram addr
+				sub_from_A( ram[rom[ ++pc ]] );
+				break;
+			case 0x96: // SUBB A,@R0
+				sub_from_A( ram[R0] );
+				break;
+			case 0x97: // SUBB A,@R1
+				sub_from_A( ram[R1] );
+				break;
+			case 0x98: // SUBB A,R0
+				sub_from_A( R0 );
+				break;
+			case 0x99: // SUBB A,R1
+				sub_from_A( R1 );
+				break;
+			case 0x9A: // SUBB A,R2
+				sub_from_A( R2 );
+				break;
+			case 0x9B: // SUBB A,R3
+				sub_from_A( R3 );
+				break;
+			case 0x9C: // SUBB A,R4
+				sub_from_A( R4 );
+				break;
+			case 0x9D: // SUBB A,R5
+				sub_from_A( R5 );
+				break;
+			case 0x9E: // SUBB A,R6
+				sub_from_A( R6 );
+				break;
+			case 0x9F: // SUBB A,R7
+				sub_from_A( R7 );
+				break;
+
+			// JBC
+			case 0x10: // JBC bit addr,reladdr
+				tmpWord = getBit(rom[pc + 1])? rom[ pc + 2 ] - 1 : pc + 2;
+				writeBit(0, rom[ pc + 1]);
+				pc = tmpWord;
+				break;
+
+			// JB
+			case 0x20: // JB bit addr,reladdr
+				pc = getBit(rom[pc + 1])? rom[ pc + 2 ] - 1 : pc + 2;
+				break;
+
+			// JNB
+			case 0x30: // JNB bit addr,reladdr
+				pc = getBit(rom[pc + 1])? rom[ pc + 2 ] - 1 : pc + 2;
+				break;
+
+			// MOVC
+			case 0x93: // MOVC A,@A+DPTR
+				a = rom[a + dptr];
+				break;
+			case 0x83: // MOVC A,@A+PC
+				a = rom[a + pc];
+				break;
+			
+			// RET
+			case 0x22: // RET
+				pc = (ram[ sp ] << 4) | ram[ sp - 1 ];
+				sp -= 2;
+				break;
 			case 0x00: // NOP
 				break;
 			default:
@@ -426,5 +995,20 @@ bool getPSW(short int pos)
 
 void setPSW(short int pos, bool val)
 {
-	psw = val? (psw | (1 << pos)) : psw & !(1 << pos);
+	psw = val ? (psw | (1 << pos)) : psw & !(1 << pos);
+}
+
+bit getBit(byte address)
+{
+	return (bit)(ram[ 0x20 + address / 8 ] & ( 0b10000000 >> ( address % 8 )));
+}
+
+void writeBit(bit val, byte address)
+{
+	bit prevVal = ram[ 0x20 + address / 8 ] & (0b10000000 >> (address % 8));
+	if (prevVal == val)
+		return;
+	ram[ 0x20 + address / 8 ] = prevVal ? 
+		ram[ 0x20 + address / 8 ] & (!(0b10000000 >> (address % 8)))
+		: ram[ 0x20 + address / 8 ] | (0b10000000 >> (address % 8));
 }
