@@ -11,7 +11,6 @@ unsigned short ROM_FILE_LEN = 0;
 word pc = 0x0000;
 word dptr = 0x0000;
 
-byte sp = 0x07;
 byte a = 0x00;
 byte b = 0x00;
 byte psw = 0x00;
@@ -40,7 +39,6 @@ void emu_clear_ram()
 {
 	pc = 0x0000;
 	dptr = 0x0000;
-	sp = 0x00;
 	a = 0x00;
 	b = 0x00;
 	register_bank = 0;
@@ -854,11 +852,11 @@ void emu_exec_instr()
 
 		// PUSH
 		case 0xC0: // PUSH iram addr
-			ram[ ++sp ] = ram[rom[ ++pc ]];
+			ram[ ++SP ] = ram[rom[ ++pc ]];
 			break;
 		// POP
 		case 0xD0: // POP iram addr
-			ram[rom[ ++pc ]] = ram[ sp-- ];
+			ram[rom[ ++pc ]] = ram[ SP-- ];
 			break;
 
 		// CPL
@@ -974,8 +972,8 @@ void emu_exec_instr()
 		
 		// RET
 		case 0x22: // RET
-			pc = (ram[ sp ] << 4) | ram[ sp - 1 ];
-			sp -= 2;
+			pc = (ram[ SP ] << 4) | ram[ SP - 1 ];
+			SP -= 2;
 			break;
 		case 0x00: // NOP
 			break;

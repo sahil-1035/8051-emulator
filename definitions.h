@@ -1,7 +1,11 @@
+#ifndef DEFINITIONS_H
+#define DEFINITIONS_H
 #include <stdbool.h>
 
-#define RAM_SIZE 128
+#define RAM_SIZE 256
 #define ROM_SIZE 4096
+
+#define SP ram[0x81]
 
 #define PSW_CY_POS 7
 #define PSW_AC_POS 6
@@ -37,3 +41,4 @@ typedef short int word;
 
 extern const char* get_instruction[];
 extern unsigned short get_instr_len[];
+#endif
