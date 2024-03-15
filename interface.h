@@ -7,14 +7,13 @@ extern WINDOW* ROM_win;
 extern WINDOW* RAM_win;
 extern WINDOW* MISC_win;
 
-extern bool quit;
+extern bool interface_quit;
 
 void interface_main();
 
 void init_curses();
 void print_curses();
 void manage_input();
-
 
 void create_ROM_window();
 void create_RAM_window();

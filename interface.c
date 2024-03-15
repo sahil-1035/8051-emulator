@@ -1,39 +1,29 @@
-#include <stdio.h>
 #include <ncurses.h>
 
 #include "interface.h"
-
 #include "emulator.h"
 
 WINDOW* ROM_win;
 WINDOW* RAM_win;
 WINDOW* MISC_win;
 
-bool quit;
-
+bool interface_quit;
 
 void interface_main()
 {
 	init_curses();
 
-	emu_load_ROM("p2");
+	emu_load_ROM("num1.bin");
 	change_bank(0);
 	emu_clear_ram();
-	pc = 0x03ab;
-	while(!quit)
+	print_curses();
+	while(!emu_quit)
 	{
-		if(pc == ROM_SIZE - 1)
-		{
-			fprintf(stderr, "end of ROM reached pc=%0X\n", pc);
-			break;
-		}
-		if(rom[pc] == 0x6f && rom[pc + 1] == 0x22)
-			break;
+		manage_input();
 
 		print_curses();
-		emu_exec_instr();
 
-		manage_input();
+		emu_exec_instr();
 	}
 	printend("End of ROM reached. -- Enter any key to exit --");
 	getch();
@@ -62,9 +52,9 @@ void print_curses()
 
 void manage_input()
 {
-	int inp;// = getch();
-	if ( (inp = getch()) == KEY_F(1) )
-		quit = true;
+	int inp = getch();
+	if ( inp == KEY_F(1) )
+		interface_quit = true;
 }
 
 void create_ROM_window()
@@ -83,7 +73,7 @@ void create_MISC_window()
 {
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	MISC_win = newwin( 17, width - 106 - 11, 18, 105);
+	MISC_win = newwin( 18, width - 106 - 11, 18, 105);
 }
 
 void printMISC()
@@ -92,7 +82,18 @@ void printMISC()
 
 	int cur_col = 2, cur_row = 1;
 	box(MISC_win, 0, 0);
-	mvwprintw(MISC_win, cur_col, cur_row, "Next instr - %s", get_instruction[rom[pc]]);
+	mvwprintw(MISC_win, cur_row, cur_col, "PC = %04XH;", pc);
+	cur_col += 14;
+	mvwprintw(MISC_win, cur_row, cur_col, "// %s", get_instruction[rom[pc]]);
+	cur_row++; cur_col = 2;
+
+	mvwprintw(MISC_win, cur_row, cur_col, "A = %02XH;", a);
+	cur_col += 9;
+	mvwprintw(MISC_win, cur_row, cur_col, "B = %02XH;", b);
+	cur_col += 9;
+	mvwprintw(MISC_win, cur_row, cur_col, "SP = %02XH;", ram[0x81]);
+	cur_col += 10;
+	mvwprintw(MISC_win, cur_row, cur_col, "DPTR = %04XH;", dptr);
 	wrefresh(MISC_win);
 }
 

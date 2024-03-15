@@ -1,4 +1,5 @@
 #include "emulator.h"
+#include "definitions.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,6 +19,8 @@ byte psw = 0x00;
 short int register_bank = 0;
 byte *R0p, *R1p, *R2p, *R3p, *R4p, *R5p, *R6p, *R7p, *R8p;
 
+
+bool emu_quit = false;
 
 void emu_load_ROM(const char* ROMpath)
 {
@@ -107,21 +110,23 @@ void emu_start()
 	rom[2] = 0x08;
 	ram[0] = 0x41;
 	a = 0x01;
-	while(true)
+	while(!emu_quit)
 	{
-		if(pc == ROM_SIZE - 1)
-		{
-			fprintf(stderr, "end of ROM reached pc=%0X\n", pc);
-			return;
-		}
-		if(rom[pc - 2] == 0x74 && rom[pc - 1] == 0x69)
-			return;
 		emu_exec_instr();
 	}
 }
 
 void emu_exec_instr()
 {
+	if(pc >= ROM_SIZE - 1)
+	{
+		fprintf(stderr, "end of ROM reached pc=%0X\n", pc);
+		emu_quit = true;
+	}
+	if(rom[pc] == 0x6f && rom[pc + 1] == 0x22)
+		emu_quit = true;
+
+
 	byte opcode = rom[pc];
 
 	bool tmp;
@@ -129,6 +134,40 @@ void emu_exec_instr()
 	word tmpWord;
 	switch(opcode)
 	{
+		// AJMP
+		case 0x01: // AJMP page0
+			pc = ( pc & 0b1111100000000000) | ( 0b0000000000000000 ) | rom[ pc + 1 ];
+			pc++;
+			break;
+		case 0x21: // AJMP page1
+			pc = ( pc & 0b1111100000000000) | ( 0b0000000100000000 ) | rom[ pc + 1 ];
+			pc++;
+			break;
+		case 0x41: // AJMP page2
+			pc = ( pc & 0b1111100000000000) | ( 0b0000001000000000 ) | rom[ pc + 1 ];
+			pc++;
+			break;
+		case 0x61: // AJMP page3
+			pc = ( pc & 0b1111100000000000) | ( 0b0000001100000000 ) | rom[ pc + 1 ];
+			pc++;
+			break;
+		case 0x81: // AJMP page4
+			pc = ( pc & 0b1111100000000000) | ( 0b0000010000000000 ) | rom[ pc + 1 ];
+			pc++;
+			break;
+		case 0xA1: // AJMP page5
+			pc = ( pc & 0b1111100000000000) | ( 0b0000010100000000 ) | rom[ pc + 1 ];
+			pc++;
+			break;
+		case 0xC1: // AJMP page6
+			pc = ( pc & 0b1111100000000000) | ( 0b0000011000000000 ) | rom[ pc + 1 ];
+			pc++;
+			break;
+		case 0xE1: // AJMP page7
+			pc = ( pc & 0b1111100000000000) | ( 0b0000011100000000 ) | rom[ pc + 1 ];
+			pc++;
+			break;
+
 		// INC
 		case 0x04: // INC A	
 			add_to_A(1);
@@ -343,7 +382,7 @@ void emu_exec_instr()
 			setPSW(PSW_CY_POS, getBit( rom[++pc] ));
 			break;
 		case 0x90: // MOV DPTR,#data16	
-			dptr = (pc + 1) << 8 | (pc + 2);
+			dptr = ( rom[pc + 1] << 8) | rom[pc + 2];
 			pc += 2;
 			break;
 		case 0x78: // MOV R0,#data	
@@ -564,7 +603,7 @@ void emu_exec_instr()
 			setPSW(PSW_CY_POS, PSW_CY & getBit( rom[++pc] ));
 			break;
 		case 0xB0: // ANL C,/bit addr // TODO
-			fprintf(stderr, "opcode undefined: ANL C,/bit addr\n");
+			 setPSW(PSW_CY, getBit(rom[ ++pc ]) & PSW_CY);
 			break;
 
 		// XRL

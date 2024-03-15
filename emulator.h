@@ -27,6 +27,8 @@ void add_to_A(byte addend);
 void sub_from_A(byte subtrahend);
 void change_bank(short int new_bank_val);
 
+extern bool emu_quit;
+
 void emu_start();
 void emu_exec_instr();
 void emu_clear_ram();
