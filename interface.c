@@ -1,11 +1,18 @@
+#include <stdio.h>
+#include <string.h>
 #include <ncurses.h>
 
 #include "interface.h"
 #include "emulator.h"
 
-WINDOW* ROM_win;
-WINDOW* RAM_win;
-WINDOW* MISC_win;
+char tmp_str[30];
+#define PRINT_IN_WIN(window, endline, args...) \
+	sprintf(tmp_str, args); \
+	print_to_window(window, tmp_str, endline);
+
+Window ROM_win;
+Window RAM_win;
+Window MISC_win;
 
 bool interface_quit;
 
@@ -61,48 +68,59 @@ void create_ROM_window()
 {
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	ROM_win = newwin(height - 2, 105, 0, 0);
+	ROM_win.win = newwin(height - 2, 105, 0, 0);
 }
 void create_RAM_window()
 {
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	RAM_win = newwin( 18, width - 106 - 11, 0, 105);
+	RAM_win.win = newwin( 18, width - 106 - 11, 0, 105);
 }
 void create_MISC_window()
 {
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	MISC_win = newwin( 18, width - 106 - 11, 18, 105);
+	MISC_win.win = newwin( 18, width - 106 - 11, 18, 105);
+	MISC_win.x = 2;
+	MISC_win.y = 1;
 }
+
+void print_to_window(Window* win, const char* str, bool endline)
+{
+	mvwprintw(win->win, win->y, win->x, "%s", str);
+	int len = strlen(str);
+	if ( endline )
+	{
+		win->y++;
+		win->x = 2;
+	}
+	else
+		win->x += len;
+}
+
 
 void printMISC()
 {
-	werase(MISC_win);
+	werase(MISC_win.win);
+	box(MISC_win.win, 0, 0);
+	MISC_win.x = 2;
+	MISC_win.y = 1;
 
-	int cur_col = 2, cur_row = 1;
-	box(MISC_win, 0, 0);
-	mvwprintw(MISC_win, cur_row, cur_col, "PC = %04XH;", pc);
-	cur_col += 14;
-	mvwprintw(MISC_win, cur_row, cur_col, "// %s", get_instruction[rom[pc]]);
-	cur_row++; cur_col = 2;
-
-	mvwprintw(MISC_win, cur_row, cur_col, "A = %02XH;", a);
-	cur_col += 9;
-	mvwprintw(MISC_win, cur_row, cur_col, "B = %02XH;", b);
-	cur_col += 9;
-	mvwprintw(MISC_win, cur_row, cur_col, "SP = %02XH;", ram[0x81]);
-	cur_col += 10;
-	mvwprintw(MISC_win, cur_row, cur_col, "DPTR = %04XH;", dptr);
-	wrefresh(MISC_win);
+	PRINT_IN_WIN(&MISC_win, 0, "PC = %04XH;", pc);
+	PRINT_IN_WIN(&MISC_win, 1, "// %s", get_instruction[rom[pc]]);
+	PRINT_IN_WIN(&MISC_win, 0, "A = %02XH;  ", a);
+	PRINT_IN_WIN(&MISC_win, 0, "B = %02XH;  ", b);
+	PRINT_IN_WIN(&MISC_win, 0, "SP = %02XH;  ", ram[0x81]);
+	PRINT_IN_WIN(&MISC_win, 0, "DPTR = %04XH;", dptr);
+	wrefresh(MISC_win.win);
 }
 
 void printROM()
 {
 	const unsigned int ROM_WIDTH = 32;
 
-	box(ROM_win, 0 , 0);
-	mvwprintw(ROM_win, 0, 3, " ROM ");
+	box(ROM_win.win, 0 , 0);
+	mvwprintw(ROM_win.win, 0, 3, " ROM ");
 
 	start_color();
 	int cur_col = 2, cur_row = 1;
@@ -113,7 +131,7 @@ void printROM()
 	for (unsigned int i = 0; i < 1 + (ROM_FILE_LEN / ROM_WIDTH); i++)
 	{
 		// For printing the ROM address at the beginning
-		mvwprintw(ROM_win, cur_row, cur_col, "%04X: ", ROM_WIDTH * i);
+		mvwprintw(ROM_win.win, cur_row, cur_col, "%04X: ", ROM_WIDTH * i);
 		cur_col += 6;
 
 		for (unsigned int j = 0; j < ROM_WIDTH; j++)
@@ -123,49 +141,49 @@ void printROM()
 
 			romptr = ROM_WIDTH * i + j;
 			if (romptr == pc)
-				wattron(ROM_win,COLOR_PAIR(1));
+				wattron(ROM_win.win,COLOR_PAIR(1));
 			if (romptr > pc && romptr < pc + get_instr_len[rom[pc]])
-				wattron(ROM_win,COLOR_PAIR(2));
+				wattron(ROM_win.win,COLOR_PAIR(2));
 
-			mvwprintw(ROM_win, cur_row, cur_col, "%02X", rom[romptr]);
+			mvwprintw(ROM_win.win, cur_row, cur_col, "%02X", rom[romptr]);
 			cur_col += 3;
 
-			wattroff(ROM_win,COLOR_PAIR(1));
-			wattroff(ROM_win,COLOR_PAIR(2));
+			wattroff(ROM_win.win,COLOR_PAIR(1));
+			wattroff(ROM_win.win,COLOR_PAIR(2));
 		}
 
 		cur_row++;
 		cur_col = 2;
 	}
-	wrefresh(ROM_win);
+	wrefresh(ROM_win.win);
 }
 
 void printRAM()
 {
 	const unsigned int RAM_WIDTH = 16;
 
-	box(RAM_win, 0 , 0);
-	mvwprintw(RAM_win, 0, 3, " RAM ");
+	box(RAM_win.win, 0 , 0);
+	mvwprintw(RAM_win.win, 0, 3, " RAM ");
 
 	int cur_col = 2, cur_row = 1;
 
 	unsigned int ramptr = 0;
 	for (unsigned int i = 0; i < (RAM_SIZE / RAM_WIDTH); i++)
 	{
-		mvwprintw(RAM_win, cur_row, cur_col, "%04X: ", RAM_WIDTH * i);
+		mvwprintw(RAM_win.win, cur_row, cur_col, "%04X: ", RAM_WIDTH * i);
 		cur_col += 6;
 		for (unsigned int j = 0; j < RAM_WIDTH; j++)
 		{
 			if (ramptr > RAM_SIZE)
 				break;
 			ramptr = RAM_WIDTH * i + j;
-			mvwprintw(RAM_win, cur_row, cur_col, "%02X", ram[ramptr]);
+			mvwprintw(RAM_win.win, cur_row, cur_col, "%02X", ram[ramptr]);
 			cur_col += 3;
 		}
 		cur_row++;
 		cur_col = 2;
 	}
-	wrefresh(RAM_win);
+	wrefresh(RAM_win.win);
 }
 
 void printend(const char* str)

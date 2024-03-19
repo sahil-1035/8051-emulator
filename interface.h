@@ -3,9 +3,17 @@
 
 #include <ncurses.h>
 
-extern WINDOW* ROM_win;
-extern WINDOW* RAM_win;
-extern WINDOW* MISC_win;
+
+typedef struct Window
+{
+	WINDOW* win;
+	int y, x;
+} Window;
+
+extern Window ROM_win;
+extern Window RAM_win;
+extern Window MISC_win;
+
 
 extern bool interface_quit;
 
@@ -18,6 +26,8 @@ void manage_input();
 void create_ROM_window();
 void create_RAM_window();
 void create_MISC_window();
+
+void print_to_window(Window* win, const char* str, bool endline);
 
 void printROM();
 void printRAM();
