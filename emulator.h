@@ -29,9 +29,9 @@ void change_bank(short int new_bank_val);
 
 extern bool emu_quit;
 
-void emu_start();
-void emu_exec_instr();
-void emu_clear_ram();
+void emu_start(void);
+void emu_exec_instr(void);
+void emu_clear_ram(void);
 
 void emu_load_ROM(const char* ROMpath);
 #endif

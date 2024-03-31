@@ -16,7 +16,7 @@ Window MISC_win;
 
 bool interface_quit;
 
-void interface_main()
+void interface_main(void)
 {
 	init_curses();
 
@@ -38,7 +38,7 @@ void interface_main()
 }
 
 
-void init_curses()
+void init_curses(void)
 {
 	initscr();
 	cbreak();
@@ -52,21 +52,21 @@ void init_curses()
 	create_window(&MISC_win, 18, width - 106 - 11, 18, 105);
 }
 
-void print_curses()
+void print_curses(void)
 {
 	printRAM();
 	printROM();
 	printMISC();
 }
 
-void manage_input()
+void manage_input(void)
 {
 	int inp = getch();
 	if ( inp == KEY_F(1) )
 		interface_quit = true;
 }
 
-void create_window(Window* win, int height, int width, int pos_x, int pos_y)
+void create_window(Window* win, int height, int width, int pos_y, int pos_x)
 {
 	win->win = newwin(height, width, pos_y, pos_x);
 	win->x = 2;
@@ -87,7 +87,7 @@ void print_to_window(Window* win, const char* str, bool endline)
 }
 
 
-void printMISC()
+void printMISC(void)
 {
 	werase(MISC_win.win);
 	box(MISC_win.win, 0, 0);
@@ -103,7 +103,7 @@ void printMISC()
 	wrefresh(MISC_win.win);
 }
 
-void printROM()
+void printROM(void)
 {
 	const unsigned int ROM_WIDTH = 32;
 
@@ -144,7 +144,7 @@ void printROM()
 	wrefresh(ROM_win.win);
 }
 
-void printRAM()
+void printRAM(void)
 {
 	const unsigned int RAM_WIDTH = 16;
 

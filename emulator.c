@@ -38,7 +38,7 @@ void emu_load_ROM(const char* ROMpath)
 }
 
 
-void emu_clear_ram()
+void emu_clear_ram(void)
 {
 	pc = 0x0000;
 	dptr = 0x0000;
@@ -103,7 +103,7 @@ void writeBit(bit val, byte address)
 		: ram[ 0x20 + address / 8 ] | (0b10000000 >> (address % 8));
 }
 
-void emu_start()
+void emu_start(void)
 {
 	rom[0] = 0x24;
 	rom[1] = 0x68;
@@ -116,7 +116,7 @@ void emu_start()
 	}
 }
 
-void emu_exec_instr()
+void emu_exec_instr(void)
 {
 	if(pc >= ROM_SIZE - 1)
 	{
