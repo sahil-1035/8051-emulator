@@ -3,6 +3,7 @@
 #include <ncurses.h>
 
 #include "interface.h"
+#include "definitions.h"
 #include "emulator.h"
 
 char tmp_str[30];
@@ -95,7 +96,7 @@ void printMISC(void)
 	MISC_win.y = 1;
 
 	PRINT_IN_WIN(&MISC_win, 0, "PC = %04XH;  ", pc);
-	PRINT_IN_WIN(&MISC_win, 1, "// %s", get_instruction[rom[pc]]);
+	PRINT_IN_WIN(&MISC_win, 1, "// %s", instructions[rom[pc]].string);
 	PRINT_IN_WIN(&MISC_win, 0, "A = %02XH;  ", a);
 	PRINT_IN_WIN(&MISC_win, 0, "B = %02XH;  ", b);
 	PRINT_IN_WIN(&MISC_win, 0, "SP = %02XH;  ", ram[0x81]);
@@ -131,7 +132,7 @@ void printROM(void)
 			romptr = ROM_WIDTH * i + j;
 			if (romptr == pc)
 				wattron(ROM_win.win,COLOR_PAIR(1));
-			if (romptr > pc && romptr < pc + get_instr_len[rom[pc]])
+			if (romptr > pc && romptr < pc + instructions[rom[pc]].no_of_bytes)
 				wattron(ROM_win.win,COLOR_PAIR(2));
 
 			PRINT_IN_WIN(&ROM_win, 0, "%02X ", rom[romptr]);

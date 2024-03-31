@@ -2,6 +2,12 @@
 #define DEFINITIONS_H
 #include <stdbool.h>
 
+struct instr {
+	unsigned char no_of_bytes;
+	const char string[25];
+};
+extern const struct instr instructions[256];
+
 #define RAM_SIZE 256
 #define ROM_SIZE 4096
 
@@ -37,8 +43,4 @@
 typedef bool bit;
 typedef unsigned char byte;
 typedef short int word;
-
-
-extern const char* get_instruction[];
-extern unsigned short get_instr_len[];
 #endif
