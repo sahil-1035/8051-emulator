@@ -23,9 +23,7 @@ void init_curses();
 void print_curses();
 void manage_input();
 
-void create_ROM_window();
-void create_RAM_window();
-void create_MISC_window();
+void create_window(Window* win, int height, int width, int pos_x, int pos_y);
 
 void print_to_window(Window* win, const char* str, bool endline);
 

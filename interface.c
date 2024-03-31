@@ -45,9 +45,11 @@ void init_curses()
 	keypad(stdscr, TRUE);
 	refresh();
 
-	create_ROM_window();
-	create_RAM_window();
-	create_MISC_window();
+	int height, width;
+	getmaxyx(stdscr, height, width);
+	create_window(&ROM_win, height - 2, 105, 0, 0);
+	create_window(&RAM_win, 18, width - 106 - 11, 0, 105);
+	create_window(&MISC_win, 18, width - 106 - 11, 18, 105);
 }
 
 void print_curses()
@@ -64,29 +66,11 @@ void manage_input()
 		interface_quit = true;
 }
 
-void create_ROM_window()
+void create_window(Window* win, int height, int width, int pos_x, int pos_y)
 {
-	int height, width;
-	getmaxyx(stdscr, height, width);
-	ROM_win.win = newwin(height - 2, 105, 0, 0);
-	ROM_win.x = 2;
-	ROM_win.y = 1;
-}
-void create_RAM_window()
-{
-	int height, width;
-	getmaxyx(stdscr, height, width);
-	RAM_win.win = newwin( 18, width - 106 - 11, 0, 105);
-	RAM_win.x = 2;
-	RAM_win.y = 1;
-}
-void create_MISC_window()
-{
-	int height, width;
-	getmaxyx(stdscr, height, width);
-	MISC_win.win = newwin( 18, width - 106 - 11, 18, 105);
-	MISC_win.x = 2;
-	MISC_win.y = 1;
+	win->win = newwin(height, width, pos_y, pos_x);
+	win->x = 2;
+	win->y = 1;
 }
 
 void print_to_window(Window* win, const char* str, bool endline)
