@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <ncurses.h>
+#include <pthread.h>
+#include <unistd.h>
 
 #include "interface.h"
 #include "definitions.h"
@@ -19,22 +21,34 @@ bool interface_quit;
 
 void interface_main(void)
 {
+	emu_init("num1.bin");
 	init_curses();
 
-	emu_load_ROM("num1.bin");
-	change_bank(0);
-	emu_clear_ram();
-	print_curses();
-	while(!emu_quit)
+
+	pthread_t emulator_thread;
+	pthread_create(&emulator_thread, NULL, (void* (*)(void*))emu_start, NULL);
+	
+	while ( !emu_quit )
 	{
-		manage_input();
-
 		print_curses();
+		pthread_mutex_unlock(&data_mutex);
 
-		emu_exec_instr();
+		/* manage_input(); */
+		usleep(1000);
+		pthread_mutex_lock(&data_mutex);
+
+		/* pthread_mutex_unlock(&data_mutex); */
+		/* emu_exec_instr(); */
+		/* pthread_mutex_lock(&data_mutex); */
 	}
-	printend("End of ROM reached. -- Enter any key to exit --");
-	getch();
+	void* return_val;
+	pthread_join(emulator_thread, return_val);
+
+	if ( emu_return_cause == END_OF_ROM )
+	{
+		printend("End of ROM reached. -- Enter any key to exit --");
+		getch();
+	}
 	endwin();
 }
 

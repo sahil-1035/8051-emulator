@@ -1,8 +1,10 @@
 #include "emulator.h"
-#include "definitions.h"
 
 #include <stdio.h>
 #include <stdlib.h>
+
+EMU_ReturnCause emu_return_cause = UNEXPECTED_QUIT;
+pthread_mutex_t data_mutex;
 
 byte rom[ROM_SIZE];
 byte ram[RAM_SIZE];
@@ -19,15 +21,21 @@ byte psw = 0x00;
 short int register_bank = 0;
 byte *R0p, *R1p, *R2p, *R3p, *R4p, *R5p, *R6p, *R7p, *R8p;
 
-
 bool emu_quit = false;
+
+void emu_init(const char* ROMpath)
+{
+	emu_load_ROM(ROMpath);
+	change_bank(0);
+	emu_clear_ram();
+}
 
 void emu_load_ROM(const char* ROMpath)
 {
 	FILE* ROMfile = fopen(ROMpath, "rb");
 	if (ROMfile == NULL)
 	{
-		fprintf(stderr, "ROM file %s could not be opened.", ROMpath);
+		emu_return_cause = ROM_CANT_BE_ACCESSED;
 		return;
 	}
 	fseek(ROMfile, 0, SEEK_END);
@@ -51,7 +59,6 @@ void emu_clear_ram(void)
 		ram[i] = 0x000;
 	}
 }
-
 void add_to_A(byte addend)
 {
 	if( a > a + addend)
@@ -105,14 +112,11 @@ void writeBit(bit val, byte address)
 
 void emu_start(void)
 {
-	rom[0] = 0x24;
-	rom[1] = 0x68;
-	rom[2] = 0x08;
-	ram[0] = 0x41;
-	a = 0x01;
-	while(!emu_quit)
+	while ( !emu_quit )
 	{
+		pthread_mutex_unlock(&data_mutex);
 		emu_exec_instr();
+		pthread_mutex_lock(&data_mutex);
 	}
 }
 
@@ -120,13 +124,13 @@ void emu_exec_instr(void)
 {
 	if(pc >= ROM_SIZE - 1)
 	{
-		fprintf(stderr, "end of ROM reached pc=%0X\n", pc);
+		emu_return_cause = END_OF_ROM;
+		pthread_mutex_lock(&data_mutex);
 		emu_quit = true;
+		pthread_mutex_unlock(&data_mutex);
 	}
-	if(rom[pc] == 0x6f && rom[pc + 1] == 0x22)
-		emu_quit = true;
 
-
+	pthread_mutex_lock(&data_mutex);
 	byte opcode = rom[pc];
 
 	bool tmp;
@@ -692,63 +696,64 @@ void emu_exec_instr(void)
 
 		// CJNE
 		case 0xB4: // CJNE A,#data,reladdr
-			pc = (a == rom[ pc + 1 ]) ? pc : rom[ pc + 2 ] - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			pc = (a == rom[ pc + 1 ]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ] - 1;
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xB5: // CJNE A,iram addr,reladdr
-			pc = (a == ram[rom[ pc + 1 ]]) ? pc : ram[rom[ pc + 2 ]] - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			// TODO: Change the following instructions to reflect relative jump (mb) (like above)
+			pc = (a == ram[rom[ pc + 1 ]]) ? pc : rom[ pc + 2 ] - 1;
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xB6: // CJNE @R0,#data,reladdr
 			pc = (a == ram[R0]) ? pc : ram[R0] - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xB7: // CJNE @R1,#data,reladdr
 			pc = (a == ram[R1]) ? pc : ram[R1] - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xB8: // CJNE R0,#data,reladdr
 			pc = (a == R0) ? pc : R0 - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xB9: // CJNE R1,#data,reladdr
 			pc = (a == R1) ? pc : R1 - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xBA: // CJNE R2,#data,reladdr
 			pc = (a == R2) ? pc : R2 - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xBB: // CJNE R3,#data,reladdr
 			pc = (a == R3) ? pc : R3 - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xBC: // CJNE R4,#data,reladdr
 			pc = (a == R4) ? pc : R4 - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xBD: // CJNE R5,#data,reladdr
 			pc = (a == R5) ? pc : R5 - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xBE: // CJNE R6,#data,reladdr
 			pc = (a == R6) ? pc : R6 - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		case 0xBF: // CJNE R7,#data,reladdr
 			pc = (a == R7) ? pc : R7 - 1;
-			setPSW( 7, ( a < rom[ pc + 1 ]));
+			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
 			pc++;
 			break;
 		
@@ -782,7 +787,7 @@ void emu_exec_instr(void)
 			break;
 		// SJMP
 		case 0x80: // SJMP reladdr
-			pc = rom[ pc + 1 ];
+			pc = pc + (char)rom[ pc + 1 ] + instructions[0x80].no_of_bytes;
 			break;
 		// RR A
 		case 0x03:
@@ -1021,4 +1026,5 @@ void emu_exec_instr(void)
 				break;
 	}   	
 	pc += 1;
+	pthread_mutex_unlock(&data_mutex);
 }

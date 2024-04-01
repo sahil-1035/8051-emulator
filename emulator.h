@@ -1,7 +1,16 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
+#include <pthread.h>
 #include "definitions.h"
+
+extern pthread_mutex_t data_mutex;
+
+typedef enum EMU_ReturnCause {
+	ROM_CANT_BE_ACCESSED, END_OF_ROM, UNEXPECTED_QUIT
+} EMU_ReturnCause;
+extern EMU_ReturnCause emu_return_cause;
+
 extern unsigned short ROM_FILE_LEN;
 
 extern byte rom[ROM_SIZE];
@@ -29,6 +38,7 @@ void change_bank(short int new_bank_val);
 
 extern bool emu_quit;
 
+void emu_init(const char* ROMpath);
 void emu_start(void);
 void emu_exec_instr(void);
 void emu_clear_ram(void);
