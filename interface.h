@@ -7,7 +7,8 @@
 typedef struct Window
 {
 	WINDOW* win;
-	int y, x;
+	int width, height;
+	int cur_y, cur_x;
 } Window;
 
 extern Window ROM_win;

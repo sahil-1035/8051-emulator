@@ -84,21 +84,23 @@ void manage_input(void)
 void create_window(Window* win, int height, int width, int pos_y, int pos_x)
 {
 	win->win = newwin(height, width, pos_y, pos_x);
-	win->x = 2;
-	win->y = 1;
+	win->cur_x = 2;
+	win->cur_y = 1;
+	win->width = width;
+	win->height = height;
 }
 
 void print_to_window(Window* win, const char* str, bool endline)
 {
-	mvwprintw(win->win, win->y, win->x, "%s", str);
+	mvwprintw(win->win, win->cur_y, win->cur_x, "%s", str);
 	int len = strlen(str);
 	if ( endline )
 	{
-		win->y++;
-		win->x = 2;
+		win->cur_y++;
+		win->cur_x = 2;
 	}
 	else
-		win->x += len;
+		win->cur_x += len;
 }
 
 
@@ -106,8 +108,8 @@ void printMISC(void)
 {
 	werase(MISC_win.win);
 	box(MISC_win.win, 0, 0);
-	MISC_win.x = 2;
-	MISC_win.y = 1;
+	MISC_win.cur_x = 2;
+	MISC_win.cur_y = 1;
 
 	PRINT_IN_WIN(&MISC_win, 0, "PC = %04XH;  ", pc);
 	PRINT_IN_WIN(&MISC_win, 1, "// %s", instructions[rom[pc]].string);
@@ -129,8 +131,8 @@ void printROM(void)
 	init_pair(1, COLOR_BLACK, COLOR_WHITE);
 	init_pair(2, COLOR_BLACK, COLOR_BLUE);
 
-	ROM_win.x = 2;
-	ROM_win.y = 1;
+	ROM_win.cur_x = 2;
+	ROM_win.cur_y = 1;
 
 	unsigned int romptr = 0;
 	for (unsigned int i = 0; i < 1 + (ROM_FILE_LEN / ROM_WIDTH); i++)
@@ -166,8 +168,8 @@ void printRAM(void)
 	box(RAM_win.win, 0 , 0);
 	mvwprintw(RAM_win.win, 0, 3, " RAM ");
 
-	RAM_win.x = 2;
-	RAM_win.y = 1;
+	RAM_win.cur_x = 2;
+	RAM_win.cur_y = 1;
 
 	unsigned int ramptr = 0;
 	for (unsigned int i = 0; i < (RAM_SIZE / RAM_WIDTH); i++)
