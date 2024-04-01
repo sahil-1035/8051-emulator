@@ -1,17 +1,12 @@
 #include <stdio.h>
-#include <string.h>
 #include <ncurses.h>
 #include <pthread.h>
 #include <unistd.h>
 
 #include "interface.h"
+
 #include "definitions.h"
 #include "emulator.h"
-
-char tmp_str[30];
-#define PRINT_IN_WIN(window, endline, args...) \
-	sprintf(tmp_str, args); \
-	print_to_window(window, tmp_str, endline);
 
 Window ROM_win;
 Window RAM_win;
@@ -23,7 +18,6 @@ void interface_main(void)
 {
 	emu_init("num1.bin");
 	init_curses();
-
 
 	pthread_t emulator_thread;
 	pthread_create(&emulator_thread, NULL, (void* (*)(void*))emu_start, NULL);
@@ -81,27 +75,6 @@ void manage_input(void)
 		interface_quit = true;
 }
 
-void create_window(Window* win, int height, int width, int pos_y, int pos_x)
-{
-	win->win = newwin(height, width, pos_y, pos_x);
-	win->cur_x = 2;
-	win->cur_y = 1;
-	win->width = width;
-	win->height = height;
-}
-
-void print_to_window(Window* win, const char* str, bool endline)
-{
-	mvwprintw(win->win, win->cur_y, win->cur_x, "%s", str);
-	int len = strlen(str);
-	if ( endline )
-	{
-		win->cur_y++;
-		win->cur_x = 2;
-	}
-	else
-		win->cur_x += len;
-}
 
 
 void printMISC(void)
@@ -188,9 +161,3 @@ void printRAM(void)
 	wrefresh(RAM_win.win);
 }
 
-void printend(const char* str)
-{
-	int height, width;
-	getmaxyx(stdscr, height, width);
-	mvprintw(height - 1, 0, "%s", str);
-}

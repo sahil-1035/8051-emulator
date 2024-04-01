@@ -11,6 +11,7 @@ add_executable(8051
 	main.c
 	interface.c
 	emulator.c
-	definitions.c)
+	definitions.c
+	window.c)
 
 target_link_libraries(8051 ${CURSES_LIBRARIES})
