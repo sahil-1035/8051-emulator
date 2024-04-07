@@ -7,6 +7,7 @@
 
 #include "definitions.h"
 #include "emulator.h"
+#include "window.h"
 
 Window ROM_win;
 Window RAM_win;
@@ -58,9 +59,9 @@ void init_curses(void)
 
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	create_window(&ROM_win, height - 1, 105, 0, 0);
-	create_window(&RAM_win, 18, width - 106 - 11, 0, 106);
-	create_window(&MISC_win, height - 1 - 18, width - 106 - 11, 18, 106);
+	create_window(&ROM_win, height - 1, 50, 0, 0);
+	create_window(&RAM_win, 18, width - 106 - 11, 0, 52);
+	create_window(&MISC_win, height - 1 - 18, width - 106 - 11, 18, 52);
 	create_window(&POPUP_win, 3, 15, height - 3, width - 15);
 }
 
@@ -101,8 +102,6 @@ void printMISC(void)
 
 void printROM(void)
 {
-	const unsigned int ROM_WIDTH = 32;
-
 	box(ROM_win.win, 0 , 0);
 	mvwprintw(ROM_win.win, 0, 3, " ROM ");
 
@@ -113,29 +112,36 @@ void printROM(void)
 	ROM_win.cur_x = 2;
 	ROM_win.cur_y = 1;
 
-	unsigned int romptr = 0;
-	for (unsigned int i = 0; i < 1 + (ROM_FILE_LEN / ROM_WIDTH); i++)
+	int instr_pos = 0;
+	bool curr_instr = false;
+	for (unsigned int i = 0; i < ROM_FILE_LEN; i++)
 	{
+		instr_pos = i;
 		// For printing the ROM address at the beginning
-		PRINT_IN_WIN(&ROM_win, 0, "%04X: ", ROM_WIDTH * i);
+		PRINT_IN_WIN(&ROM_win, 0, "%04X: ", i);
 
-		for (unsigned int j = 0; j < ROM_WIDTH; j++)
-		{
-			if (romptr > ROM_FILE_LEN)
-				break;
+		if (i == pc)
+			curr_instr = true;
 
-			romptr = ROM_WIDTH * i + j;
-			if (romptr == pc)
-				wattron(ROM_win.win,COLOR_PAIR(1));
-			if (romptr > pc && romptr < pc + instructions[rom[pc]].no_of_bytes)
-				wattron(ROM_win.win,COLOR_PAIR(2));
+		if (curr_instr)
+			wattron(ROM_win.win,COLOR_PAIR(1));
 
-			PRINT_IN_WIN(&ROM_win, 0, "%02X ", rom[romptr]);
+		PRINT_IN_WIN(&ROM_win, 0, "%02X ", rom[i]);
 
-			wattroff(ROM_win.win,COLOR_PAIR(1));
-			wattroff(ROM_win.win,COLOR_PAIR(2));
-		}
-		PRINT_IN_WIN(&ROM_win, 1, "");
+		wattroff(ROM_win.win,COLOR_PAIR(1));
+		wattroff(ROM_win.win,COLOR_PAIR(2));
+
+		if (curr_instr)
+			wattron(ROM_win.win,COLOR_PAIR(2));
+
+		for (unsigned int j = 0; j < instructions[rom[instr_pos]].no_of_bytes - 1; j++)
+			PRINT_IN_WIN(&ROM_win, 0, "%02X ", rom[++i]);
+
+		wattroff(ROM_win.win,COLOR_PAIR(1));
+		wattroff(ROM_win.win,COLOR_PAIR(2));
+
+		ROM_win.cur_x = 20;
+		PRINT_IN_WIN(&ROM_win, 1, "; %s", instructions[rom[instr_pos]].string);
 	}
 	wrefresh(ROM_win.win);
 }
