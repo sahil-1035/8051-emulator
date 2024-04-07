@@ -11,6 +11,7 @@
 Window ROM_win;
 Window RAM_win;
 Window MISC_win;
+Window POPUP_win;
 
 bool interface_quit;
 
@@ -27,7 +28,7 @@ void interface_main(void)
 		print_curses();
 		pthread_mutex_unlock(&data_mutex);
 
-		/* manage_input(); */
+		manage_input();
 		usleep(1000);
 		pthread_mutex_lock(&data_mutex);
 
@@ -52,13 +53,15 @@ void init_curses(void)
 	initscr();
 	cbreak();
 	keypad(stdscr, TRUE);
+	nodelay(stdscr, TRUE);
 	refresh();
 
 	int height, width;
 	getmaxyx(stdscr, height, width);
-	create_window(&ROM_win, height - 2, 105, 0, 0);
-	create_window(&RAM_win, 18, width - 106 - 11, 0, 105);
-	create_window(&MISC_win, 18, width - 106 - 11, 18, 105);
+	create_window(&ROM_win, height - 1, 105, 0, 0);
+	create_window(&RAM_win, 18, width - 106 - 11, 0, 106);
+	create_window(&MISC_win, height - 1 - 18, width - 106 - 11, 18, 106);
+	create_window(&POPUP_win, 3, 15, height - 3, width - 15);
 }
 
 void print_curses(void)
@@ -66,15 +69,18 @@ void print_curses(void)
 	printRAM();
 	printROM();
 	printMISC();
+	box(POPUP_win.win, 0, 0);
+	wrefresh(POPUP_win.win);
 }
 
 void manage_input(void)
 {
 	int inp = getch();
-	if ( inp == KEY_F(1) )
+	if ( inp == ERR )
+		return;
+	else if ( inp == 'q' )
 		interface_quit = true;
 }
-
 
 
 void printMISC(void)
