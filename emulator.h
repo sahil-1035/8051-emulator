@@ -11,6 +11,8 @@ typedef enum EMU_ReturnCause {
 } EMU_ReturnCause;
 extern EMU_ReturnCause emu_return_cause;
 
+extern const float XTALfreq;
+
 extern unsigned short ROM_FILE_LEN;
 
 extern byte rom[ROM_SIZE];

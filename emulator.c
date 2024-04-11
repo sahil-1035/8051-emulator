@@ -1,10 +1,15 @@
 #include "emulator.h"
+#include "definitions.h"
 
+#include <bits/time.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 EMU_ReturnCause emu_return_cause = UNEXPECTED_QUIT;
 pthread_mutex_t data_mutex;
+
+const float XTALfreq = 11.0592f;
+const float timePeriodPerMachineCycle = 1000000 / (XTALfreq / 12);
 
 byte rom[ROM_SIZE];
 byte ram[RAM_SIZE];
@@ -132,6 +137,12 @@ void emu_exec_instr(void)
 
 	pthread_mutex_lock(&data_mutex);
 	byte opcode = rom[pc];
+
+	const float timePeriodForInstruction =
+		instructions[opcode].no_of_bytes * timePeriodPerMachineCycle;
+
+	struct timespec initTime;
+	clock_gettime(CLOCK_REALTIME, &initTime);
 
 	bool tmp;
 	byte tmpByte;
@@ -1027,4 +1038,16 @@ void emu_exec_instr(void)
 	}   	
 	pc += 1;
 	pthread_mutex_unlock(&data_mutex);
+
+	struct timespec nowTime;
+	clock_gettime(CLOCK_REALTIME, &nowTime);
+
+	unsigned int timeElapsed;
+	if ( (nowTime.tv_sec - initTime.tv_sec) == 0)
+		timeElapsed = nowTime.tv_nsec - initTime.tv_nsec;
+	else
+		timeElapsed = 10E9 - initTime.tv_nsec + nowTime.tv_nsec;
+
+	struct timespec request, remaining = { 0, timePeriodForInstruction - timeElapsed };
+	nanosleep(&request, &remaining);
 }
