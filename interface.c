@@ -71,7 +71,7 @@ void print_curses(void)
 	printROM();
 	printMISC();
 	box(POPUP_win.win, 0, 0);
-	wrefresh(POPUP_win.win);
+	refresh_window(&POPUP_win);
 }
 
 void manage_input(void)
@@ -91,13 +91,13 @@ void printMISC(void)
 	MISC_win.cur_x = 2;
 	MISC_win.cur_y = 1;
 
-	PRINT_IN_WIN(&MISC_win, 0, "PC = %04XH;  ", pc);
-	PRINT_IN_WIN(&MISC_win, 1, "// %s", instructions[rom[pc]].string);
-	PRINT_IN_WIN(&MISC_win, 0, "A = %02XH;  ", a);
-	PRINT_IN_WIN(&MISC_win, 0, "B = %02XH;  ", b);
-	PRINT_IN_WIN(&MISC_win, 0, "SP = %02XH;  ", ram[0x81]);
-	PRINT_IN_WIN(&MISC_win, 0, "DPTR = %04XH;", dptr);
-	wrefresh(MISC_win.win);
+	print_to_window(&MISC_win, 0, "PC = %04XH;  ", pc);
+	print_to_window(&MISC_win, 1, "// %s", instructions[rom[pc]].string);
+	print_to_window(&MISC_win, 0, "A = %02XH;  ", a);
+	print_to_window(&MISC_win, 0, "B = %02XH;  ", b);
+	print_to_window(&MISC_win, 0, "SP = %02XH;  ", ram[0x81]);
+	print_to_window(&MISC_win, 0, "DPTR = %04XH;", dptr);
+	refresh_window(&MISC_win);
 }
 
 void printROM(void)
@@ -118,7 +118,7 @@ void printROM(void)
 	{
 		instr_pos = i;
 		// For printing the ROM address at the beginning
-		PRINT_IN_WIN(&ROM_win, 0, "%04X: ", i);
+		print_to_window(&ROM_win, 0, "%04X: ", i);
 
 		if (i == pc)
 			curr_instr = true;
@@ -126,7 +126,7 @@ void printROM(void)
 		if (curr_instr)
 			wattron(ROM_win.win,COLOR_PAIR(1));
 
-		PRINT_IN_WIN(&ROM_win, 0, "%02X ", rom[i]);
+		print_to_window(&ROM_win, 0, "%02X ", rom[i]);
 
 		wattroff(ROM_win.win,COLOR_PAIR(1));
 		wattroff(ROM_win.win,COLOR_PAIR(2));
@@ -135,15 +135,15 @@ void printROM(void)
 			wattron(ROM_win.win,COLOR_PAIR(2));
 
 		for (unsigned int j = 0; j < instructions[rom[instr_pos]].no_of_bytes - 1; j++)
-			PRINT_IN_WIN(&ROM_win, 0, "%02X ", rom[++i]);
+			print_to_window(&ROM_win, 0, "%02X ", rom[++i]);
 
 		wattroff(ROM_win.win,COLOR_PAIR(1));
 		wattroff(ROM_win.win,COLOR_PAIR(2));
 
 		ROM_win.cur_x = 20;
-		PRINT_IN_WIN(&ROM_win, 1, "; %s", instructions[rom[instr_pos]].string);
+		print_to_window(&ROM_win, 1, "; %s", instructions[rom[instr_pos]].string);
 	}
-	wrefresh(ROM_win.win);
+	refresh_window(&ROM_win);
 }
 
 void printRAM(void)
@@ -160,16 +160,15 @@ void printRAM(void)
 	for (unsigned int i = 0; i < (RAM_SIZE / RAM_WIDTH); i++)
 	{
 		// For printing the RAM address at the beginning
-		PRINT_IN_WIN(&RAM_win, 0, "%04X: ", RAM_WIDTH * i);
+		print_to_window(&RAM_win, 0, "%04X: ", RAM_WIDTH * i);
 		for (unsigned int j = 0; j < RAM_WIDTH; j++)
 		{
 			if (ramptr > RAM_SIZE)
 				break;
 			ramptr = RAM_WIDTH * i + j;
-			PRINT_IN_WIN(&RAM_win, 0, "%02X ", ram[ramptr]);
+			print_to_window(&RAM_win, 0, "%02X ", ram[ramptr]);
 		}
-		PRINT_IN_WIN(&RAM_win, 1, "");
+		print_to_window(&RAM_win, 1, "");
 	}
-	wrefresh(RAM_win.win);
+	refresh_window(&RAM_win);
 }
-
