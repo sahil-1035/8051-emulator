@@ -1,16 +1,18 @@
 #include "window.h"
 
+#include <ncurses.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-void create_window(Window* win, int height, int width, int pos_y, int pos_x)
+void create_window(Window* win, const char* win_title, int height, int width, int pos_y, int pos_x)
 {
 	win->win = newwin(height, width, pos_y, pos_x);
 	win->cur_x = 2;
 	win->cur_y = 1;
 	win->width = width;
 	win->height = height;
+	set_window_title(win, win_title);
 }
 
 void print_to_window(Window* win, bool endline, const char* format, ...)
@@ -39,7 +41,28 @@ void printend(const char* str)
 	mvprintw(height - 1, 0, "%s", str);
 }
 
+void set_window_title(Window* win, const char* win_title)
+{
+	strncpy(win->window_title, win_title, sizeof(win->window_title));
+}
+
+void set_window_cursor(Window* win, int x, int y)
+{
+	win->cur_x = x;
+	win->cur_y = y;
+}
+
+void move_window_cursor(Window* win, int x, int y)
+{
+	win->cur_x += x;
+	win->cur_y += y;
+}
+
 void refresh_window(Window* win)
 {
 	wrefresh(win->win);
+	werase(win->win);
+	box(win->win, 0, 0);
+	mvwprintw(win->win, 0, 3, "%s", win->window_title);
+	set_window_cursor(win, 2, 1);
 }

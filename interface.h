@@ -5,9 +5,7 @@
 
 #include "window.h"
 
-extern Window ROM_win;
-extern Window RAM_win;
-extern Window MISC_win;
+extern Window *ROM_win, *RAM_win, *MISC_win, *POPUP_win;
 
 extern bool interface_quit;
 
