@@ -4,12 +4,13 @@
 #include <bits/time.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 EMU_ReturnCause emu_return_cause = UNEXPECTED_QUIT;
 pthread_mutex_t data_mutex;
 
 const float XTALfreq = 11.0592f;
-const float timePeriodPerMachineCycle = 1000000 / (XTALfreq / 12);
+const float timePeriodPerMachineCycle = 1000.0f / (XTALfreq / 12);
 
 byte rom[ROM_SIZE];
 byte ram[RAM_SIZE];
@@ -1035,7 +1036,7 @@ void emu_exec_instr(void)
 			default:
 				fprintf(stderr, "unknown opcode at pc = %0X  opcode = %0X\n", pc, opcode);
 				break;
-	}   	
+	}
 	pc += 1;
 	pthread_mutex_unlock(&data_mutex);
 
@@ -1048,6 +1049,5 @@ void emu_exec_instr(void)
 	else
 		timeElapsed = 10E9 - initTime.tv_nsec + nowTime.tv_nsec;
 
-	struct timespec request, remaining = { 0, timePeriodForInstruction - timeElapsed };
-	nanosleep(&request, &remaining);
+	usleep( timePeriodForInstruction - timeElapsed / 1000.0f );
 }

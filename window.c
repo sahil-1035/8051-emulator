@@ -3,7 +3,9 @@
 #include <ncurses.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+
 
 void create_window(Window* win, const char* win_title, int height, int width, int pos_y, int pos_x)
 {
@@ -41,9 +43,38 @@ void printend(const char* str)
 	mvprintw(height - 1, 0, "%s", str);
 }
 
+char* get_window_input_str(Window* win)
+{
+	char* buff = malloc(256 * sizeof(char));
+	strcpy(buff, win->inp_text);
+	return buff;
+}
+
+void clear_window_input_buffer(Window* win)
+{
+	strcpy(win->inp_text, "");
+}
+
+bool get_window_input(Window *win)
+{
+	char inp = mvwgetch(win->win, win->cur_y, win->cur_x);
+	if ( inp != '\n' && inp != ERR )
+	{
+		if ( inp == 127 && strlen(win->inp_text) != 0 )
+		{
+			win->inp_text[ strlen(win->inp_text) - 1 ] = '\0';
+			return false;
+		}
+		sprintf(win->inp_text, "%s%c", win->inp_text, inp);
+		return false;
+	}
+	else
+		return true;
+}
+
 void set_window_title(Window* win, const char* win_title)
 {
-	strncpy(win->window_title, win_title, sizeof(win->window_title));
+	strcpy(win->title, win_title);
 }
 
 void set_window_cursor(Window* win, int x, int y)
@@ -58,11 +89,15 @@ void move_window_cursor(Window* win, int x, int y)
 	win->cur_y += y;
 }
 
+void clear_window(Window* win)
+{
+	werase(win->win);
+	box(win->win, 0, 0);
+	mvwprintw(win->win, 0, 3, "%s", win->title);
+	set_window_cursor(win, 2, 1);
+}
+
 void refresh_window(Window* win)
 {
 	wrefresh(win->win);
-	werase(win->win);
-	box(win->win, 0, 0);
-	mvwprintw(win->win, 0, 3, "%s", win->window_title);
-	set_window_cursor(win, 2, 1);
 }

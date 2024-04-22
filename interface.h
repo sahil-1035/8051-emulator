@@ -17,4 +17,5 @@ void print_curses(void);
 void printROM(void);
 void printRAM(void);
 void printMISC(void);
+void printPOPUP(void);
 #endif
