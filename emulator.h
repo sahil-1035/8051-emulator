@@ -2,14 +2,24 @@
 #define EMULATOR_H
 
 #include <pthread.h>
+
 #include "definitions.h"
+#include "utils/set.h"
 
 extern pthread_mutex_t data_mutex;
 
 typedef enum EMU_ReturnCause {
 	ROM_CANT_BE_ACCESSED, END_OF_ROM, UNEXPECTED_QUIT
 } EMU_ReturnCause;
+
+typedef enum EMU_State {
+	EMU_RUNNING, EMU_BREAKPOINT, EMU_CONTINUE
+} EMU_State;
+
 extern EMU_ReturnCause emu_return_cause;
+extern EMU_State emu_state;
+
+extern Set* breakpoints;
 
 extern const float XTALfreq;
 

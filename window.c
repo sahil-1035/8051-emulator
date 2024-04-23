@@ -3,7 +3,6 @@
 #include <ncurses.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 
@@ -47,9 +46,7 @@ void printend(const char* str)
 
 char* get_window_input_str(Window* win)
 {
-	char* buff = malloc(256 * sizeof(char));
-	strcpy(buff, win->inp_text);
-	return buff;
+	return win->inp_text;
 }
 
 void clear_window_input_buffer(Window* win)

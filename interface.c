@@ -2,13 +2,20 @@
 #include <ncurses.h>
 #include <pthread.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "interface.h"
 
 #include "definitions.h"
 #include "emulator.h"
+#include "utils/set.h"
 #include "window.h"
+
+typedef enum Commands
+{
+	CMD_BREAKPOINT, CMD_CONTINUE
+} Commands;
 
 Window *ROM_win, *RAM_win, *MISC_win, *POPUP_win;
 
@@ -77,11 +84,47 @@ void print_curses(void)
 	printPOPUP();
 }
 
+bool check_command_value(char* command, Commands command_val)
+{
+	switch (command_val)
+	{
+	case CMD_BREAKPOINT:
+		return (strcmp(command, "breakpoint") == 0) ||
+			(strcmp(command, "b") == 0);
+		break;
+	case CMD_CONTINUE:
+		return (strcmp(command, "continue") == 0) ||
+			(strcmp(command, "c") == 0);
+		break;
+	default:
+		break;
+	}
+	return false;
+}
+
 void manage_input(void)
 {
 	if ( get_window_input(POPUP_win) )
 	{
 		set_window_title(POPUP_win, get_window_input_str(POPUP_win));
+		char* input_str = get_window_input_str(POPUP_win);
+
+		char command[30];
+		sscanf(input_str, "%s", command);
+		if ( check_command_value(command, CMD_BREAKPOINT) )
+		{
+			int breakpoint_val;
+			sscanf(input_str, "%s %d", command, &breakpoint_val);
+			pthread_mutex_lock(&data_mutex);
+			insert_set(breakpoints, breakpoint_val);
+			pthread_mutex_unlock(&data_mutex);
+		}
+		else if ( check_command_value(command, CMD_CONTINUE) )
+		{
+			pthread_mutex_lock(&data_mutex);
+			emu_state = EMU_CONTINUE;
+			pthread_mutex_unlock(&data_mutex);
+		}
 		clear_window_input_buffer(POPUP_win);
 		printPOPUP();
 	}
@@ -93,6 +136,7 @@ void printPOPUP(void)
 	print_to_window(POPUP_win, 0, "> ");
 	print_to_window(POPUP_win, 0, "%s", get_window_input_str(POPUP_win));
 	refresh_window(POPUP_win);
+
 }
 
 
@@ -114,6 +158,7 @@ void printROM(void)
 	start_color();
 	init_pair(1, COLOR_BLACK, COLOR_WHITE);
 	init_pair(2, COLOR_BLACK, COLOR_BLUE);
+	init_pair(3, COLOR_BLACK, COLOR_RED);
 
 	int instr_pos = 0;
 	bool curr_instr = false;
@@ -121,29 +166,38 @@ void printROM(void)
 	{
 		instr_pos = i;
 		// For printing the ROM address at the beginning
-		print_to_window(ROM_win, 0, "%04X: ", i);
+		if ( find_in_set(breakpoints, instr_pos) )
+			wattron(ROM_win->win, COLOR_PAIR(3));
+		char buff[30];
+		print_to_window(ROM_win, 0, "%04X", i, get_str_set(breakpoints, buff), instr_pos);
+		wattroff(ROM_win->win, COLOR_PAIR(3));
 
+		print_to_window(ROM_win, 0, ": ");
 		if (i == pc)
 			curr_instr = true;
 		else
 			curr_instr = false;
 
+		// Sets color and displayes the first byte (instruction)
+		// then removes colors
 		if (curr_instr)
 			wattron(ROM_win->win, COLOR_PAIR(1));
-
-		print_to_window(ROM_win, 0, "%02X ", rom[i]);
-
+		print_to_window(ROM_win, 0, "%02X", rom[i]);
 		wattroff(ROM_win->win, COLOR_PAIR(1));
 		wattroff(ROM_win->win, COLOR_PAIR(2));
+		print_to_window(ROM_win, 0, " ");
 
-		if (curr_instr)
-			wattron(ROM_win->win, COLOR_PAIR(2));
-
+		// Sets color and displayes the rest of the bytes of instruction
+		// then removes colors
 		for (unsigned int j = 0; j < instructions[rom[instr_pos]].no_of_bytes - 1; j++)
-			print_to_window(ROM_win, 0, "%02X ", rom[++i]);
-
-		wattroff(ROM_win->win, COLOR_PAIR(1));
-		wattroff(ROM_win->win, COLOR_PAIR(2));
+		{
+			if (curr_instr)
+				wattron(ROM_win->win, COLOR_PAIR(2));
+			print_to_window(ROM_win, 0, "%02X", rom[++i]);
+			wattroff(ROM_win->win, COLOR_PAIR(1));
+			wattroff(ROM_win->win, COLOR_PAIR(2));
+			print_to_window(ROM_win, 0, " ");
+		}
 
 		set_window_cursor(ROM_win, 20, ROM_win->cur_y);
 		print_to_window(ROM_win, 1, "; %s", instructions[rom[instr_pos]].string);

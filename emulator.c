@@ -1,5 +1,6 @@
 #include "emulator.h"
 #include "definitions.h"
+#include "utils/set.h"
 
 #include <bits/time.h>
 #include <stdio.h>
@@ -7,7 +8,10 @@
 #include <unistd.h>
 
 EMU_ReturnCause emu_return_cause = UNEXPECTED_QUIT;
+EMU_State emu_state = EMU_RUNNING;
 pthread_mutex_t data_mutex;
+
+Set* breakpoints;
 
 const float XTALfreq = 11.0592f;
 const float timePeriodPerMachineCycle = 1000.0f / (XTALfreq / 12);
@@ -31,6 +35,8 @@ bool emu_quit = false;
 
 void emu_init(const char* ROMpath)
 {
+	breakpoints = create_set(20);
+	emu_state = EMU_RUNNING;
 	emu_load_ROM(ROMpath);
 	change_bank(0);
 	emu_clear_ram();
@@ -135,6 +141,16 @@ void emu_exec_instr(void)
 		emu_quit = true;
 		pthread_mutex_unlock(&data_mutex);
 	}
+
+	if ( emu_state == EMU_CONTINUE )
+		emu_state = EMU_BREAKPOINT;
+	else if ( find_in_set(breakpoints, pc) )
+	{
+		emu_state = EMU_BREAKPOINT;
+		return;
+	}
+	if ( set_is_empty(breakpoints) )
+		emu_state = EMU_RUNNING;
 
 	pthread_mutex_lock(&data_mutex);
 	byte opcode = rom[pc];

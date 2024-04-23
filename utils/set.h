@@ -5,8 +5,8 @@
 
 typedef struct Set {
 	int* arr;
-	int pointer;
-	int max_len;
+	unsigned int pointer;
+	unsigned int max_len;
 } Set;
 
 Set* create_set(unsigned int len);

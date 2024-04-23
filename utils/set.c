@@ -39,7 +39,7 @@ char* get_str_set(Set* set, char* buff)
 
 	sprintf(buff, "{");
 	sprintf(buff, "%s %d", buff, set->arr[0]);
-	for(int i = 1; i < length_of_set(set) - 1; i++)
+	for(unsigned int i = 1; i < length_of_set(set) - 1; i++)
 	{
 		sprintf(buff, "%s, %d", buff, set->arr[i]);
 	}
@@ -49,7 +49,9 @@ char* get_str_set(Set* set, char* buff)
 
 bool find_in_set(Set* set, int val)
 {
-	for(int i = 0; i < length_of_set(set); i++)
+	if (set_is_empty(set))
+		return false;
+	for(unsigned int i = 0; i < length_of_set(set) - 1; i++)
 	{
 		if ( set->arr[i] == val )
 			return true;
@@ -60,7 +62,7 @@ bool find_in_set(Set* set, int val)
 void erase_set(Set* set, int val)
 {
 	int val_at = -1;
-	for(int i = 0; i < length_of_set(set); i++)
+	for(unsigned int i = 0; i < length_of_set(set) - 1; i++)
 	{
 		if ( set->arr[i] == val )
 		{
