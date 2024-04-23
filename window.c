@@ -10,6 +10,8 @@
 void create_window(Window* win, const char* win_title, int height, int width, int pos_y, int pos_x)
 {
 	win->win = newwin(height, width, pos_y, pos_x);
+	win->def_cur_x = 2;
+	win->def_cur_y = 1;
 	win->cur_x = 2;
 	win->cur_y = 1;
 	win->width = width;
@@ -57,12 +59,18 @@ void clear_window_input_buffer(Window* win)
 
 bool get_window_input(Window *win)
 {
-	char inp = mvwgetch(win->win, win->cur_y, win->cur_x);
-	if ( inp != '\n' && inp != ERR )
+	/* char inp = mvwgetch(win->win, win->cur_y, win->cur_x); */
+	char inp = getch();
+	if ( inp == ERR )
+		return false;
+	if ( inp != '\n' )
 	{
-		if ( inp == 127 && strlen(win->inp_text) != 0 )
+		// To check if the entered character is a backspace
+		if ( inp =='\a' )
 		{
-			win->inp_text[ strlen(win->inp_text) - 1 ] = '\0';
+			// Do not backspace if the string is already empty
+			if ( strlen(win->inp_text) != 0 )
+				win->inp_text[ strlen(win->inp_text) - 1 ] = '\0';
 			return false;
 		}
 		sprintf(win->inp_text, "%s%c", win->inp_text, inp);
@@ -94,7 +102,7 @@ void clear_window(Window* win)
 	werase(win->win);
 	box(win->win, 0, 0);
 	mvwprintw(win->win, 0, 3, "%s", win->title);
-	set_window_cursor(win, 2, 1);
+	set_window_cursor(win, win->def_cur_x, win->def_cur_y);
 }
 
 void refresh_window(Window* win)

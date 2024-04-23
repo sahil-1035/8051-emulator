@@ -9,6 +9,7 @@ typedef struct Window
 	WINDOW* win;
 	int width, height;
 	int cur_y, cur_x;
+	int def_cur_y, def_cur_x;
 	char title[30];
 	char inp_text[256];
 } Window;

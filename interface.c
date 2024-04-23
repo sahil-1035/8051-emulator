@@ -24,20 +24,18 @@ void interface_main(void)
 
 	printPOPUP();
 
-	pthread_t input_thread;
-	pthread_create(&input_thread, NULL, (void* (*)(void*))manage_input, NULL);
-
 	while ( !emu_quit )
 	{
 		print_curses();
 		pthread_mutex_unlock(&data_mutex);
 
+		manage_input();
 		usleep(10000);
 		pthread_mutex_lock(&data_mutex);
 
-		pthread_mutex_unlock(&data_mutex);
-		emu_exec_instr();
-		pthread_mutex_lock(&data_mutex);
+		/* pthread_mutex_unlock(&data_mutex); */
+		/* emu_exec_instr(); */
+		/* pthread_mutex_lock(&data_mutex); */
 	}
 	void* return_val = NULL;
 	pthread_join(emulator_thread, return_val);
@@ -81,21 +79,12 @@ void print_curses(void)
 
 void manage_input(void)
 {
-	while ( 1 )
+	if ( get_window_input(POPUP_win) )
 	{
-		if ( get_window_input(POPUP_win) )
-		{
-			set_window_title(POPUP_win, get_window_input_str(POPUP_win));
-			clear_window_input_buffer(POPUP_win);
-			printPOPUP();
-		}
+		set_window_title(POPUP_win, get_window_input_str(POPUP_win));
+		clear_window_input_buffer(POPUP_win);
+		printPOPUP();
 	}
-	return;
-	int inp = getch();
-	if ( inp == ERR )
-		return;
-	else if ( inp == 'q' )
-		interface_quit = true;
 }
 
 void printPOPUP(void)
