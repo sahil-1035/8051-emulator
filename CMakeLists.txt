@@ -13,7 +13,8 @@ add_executable(8051
 	interface.c
 	emulator.c
 	definitions.c
-	window.c)
+	window.c
+	utils/set.c)
 
 target_compile_options(8051 PRIVATE
 	-Wall -Wextra
