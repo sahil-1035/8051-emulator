@@ -22,7 +22,7 @@ void print_to_window(Window* win, bool endline, const char* format, ...)
 {
 	va_list args;
 	va_start(args, format);
-	char outstr[30];
+	char outstr[256];
 	vsnprintf(outstr, sizeof(outstr), format, args);
 	va_end(args);
 

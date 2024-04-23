@@ -3,6 +3,7 @@
 #include "utils/set.h"
 
 #include <bits/time.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,6 +13,8 @@ EMU_State emu_state = EMU_RUNNING;
 pthread_mutex_t data_mutex;
 
 Set* breakpoints;
+pthread_cond_t breakpoint_cond;
+int emu_step_point = -1;
 
 const float XTALfreq = 11.0592f;
 const float timePeriodPerMachineCycle = 1000.0f / (XTALfreq / 12);
@@ -36,6 +39,7 @@ bool emu_quit = false;
 void emu_init(const char* ROMpath)
 {
 	breakpoints = create_set(20);
+	emu_step_point = -1;
 	emu_state = EMU_RUNNING;
 	emu_load_ROM(ROMpath);
 	change_bank(0);
@@ -122,6 +126,11 @@ void writeBit(bit val, byte address)
 		: ram[ 0x20 + address / 8 ] | (0b10000000 >> (address % 8));
 }
 
+word emu_get_next_instr()
+{
+	return pc + instructions[rom[pc]].no_of_bytes;
+}
+
 void emu_start(void)
 {
 	while ( !emu_quit )
@@ -144,9 +153,14 @@ void emu_exec_instr(void)
 
 	if ( emu_state == EMU_CONTINUE )
 		emu_state = EMU_BREAKPOINT;
-	else if ( find_in_set(breakpoints, pc) )
+	else if ( pc == emu_step_point || find_in_set(breakpoints, pc) )
 	{
+		emu_step_point = -1;
 		emu_state = EMU_BREAKPOINT;
+		pthread_mutex_lock(&data_mutex);
+		while ( emu_state == EMU_BREAKPOINT )
+			pthread_cond_wait(&breakpoint_cond, &data_mutex);
+		pthread_mutex_unlock(&data_mutex);
 		return;
 	}
 	if ( set_is_empty(breakpoints) )

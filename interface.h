@@ -18,4 +18,5 @@ void printROM(void);
 void printRAM(void);
 void printMISC(void);
 void printPOPUP(void);
+void printHELP(void);
 #endif

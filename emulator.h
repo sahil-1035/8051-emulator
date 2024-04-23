@@ -20,6 +20,8 @@ extern EMU_ReturnCause emu_return_cause;
 extern EMU_State emu_state;
 
 extern Set* breakpoints;
+extern pthread_cond_t breakpoint_cond;
+extern int emu_step_point;
 
 extern const float XTALfreq;
 
@@ -54,6 +56,8 @@ void emu_init(const char* ROMpath);
 void emu_start(void);
 void emu_exec_instr(void);
 void emu_clear_ram(void);
+
+word emu_get_next_instr();
 
 void emu_load_ROM(const char* ROMpath);
 #endif

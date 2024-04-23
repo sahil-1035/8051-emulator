@@ -14,11 +14,12 @@
 
 typedef enum Commands
 {
-	CMD_BREAKPOINT, CMD_CONTINUE
+	CMD_BREAKPOINT, CMD_CONTINUE, CMD_HELP, CMD_STEP, CMD_NEXT
 } Commands;
 
-Window *ROM_win, *RAM_win, *MISC_win, *POPUP_win;
+Window *ROM_win, *RAM_win, *MISC_win, *POPUP_win, *HELP_win;
 
+bool enable_help;
 bool interface_quit;
 
 void interface_main(void)
@@ -70,24 +71,47 @@ void init_curses(void)
 	RAM_win = malloc(sizeof(Window));
 	MISC_win = malloc(sizeof(Window));
 	POPUP_win = malloc(sizeof(Window));
+	HELP_win = malloc(sizeof(Window));
 	create_window(ROM_win, " ROM ", height - 1, 50, 0, 0);
 	create_window(RAM_win, " RAM ", 18, width - 106 - 11, 0, 52);
 	create_window(MISC_win, " MISC ", height - 1 - 18, width - 106 - 11, 18, 52);
-	create_window(POPUP_win, "", 3, 15, height - 3, width - 15);
+	create_window(POPUP_win, " COMMAND ", 3, 40, height - 4, width - 64);
+	int HELP_win_x = 74;
+	int HELP_win_y = 30;
+	create_window(HELP_win, " HELP ", HELP_win_y, HELP_win_x, \
+			height / 2 - HELP_win_y / 2, width / 2 - HELP_win_x / 2);
 }
 
 void print_curses(void)
 {
-	printRAM();
-	printROM();
-	printMISC();
-	printPOPUP();
+	if ( enable_help )
+		printHELP();
+	else
+	{
+		printRAM();
+		printROM();
+		printMISC();
+		printPOPUP();
+	}
 }
 
 bool check_command_value(char* command, Commands command_val)
 {
 	switch (command_val)
 	{
+	case CMD_STEP:
+		return (strcmp(command, "step") == 0) ||
+			(strcmp(command, "s") == 0);
+			break;
+	case CMD_NEXT:
+		return (strcmp(command, "next") == 0) ||
+			(strcmp(command, "n") == 0);
+			break;
+	case CMD_HELP:
+		return (strcmp(command, "help") == 0) ||
+			(strcmp(command, "?") == 0) ||
+			(strcmp(command, "h") == 0);
+		break;
 	case CMD_BREAKPOINT:
 		return (strcmp(command, "breakpoint") == 0) ||
 			(strcmp(command, "b") == 0);
@@ -97,6 +121,7 @@ bool check_command_value(char* command, Commands command_val)
 			(strcmp(command, "c") == 0);
 		break;
 	default:
+		enable_help = true;
 		break;
 	}
 	return false;
@@ -106,7 +131,6 @@ void manage_input(void)
 {
 	if ( get_window_input(POPUP_win) )
 	{
-		set_window_title(POPUP_win, get_window_input_str(POPUP_win));
 		char* input_str = get_window_input_str(POPUP_win);
 
 		char command[30];
@@ -123,7 +147,30 @@ void manage_input(void)
 		{
 			pthread_mutex_lock(&data_mutex);
 			emu_state = EMU_CONTINUE;
+			pthread_cond_signal(&breakpoint_cond);
 			pthread_mutex_unlock(&data_mutex);
+		}
+		else if ( check_command_value(command, CMD_STEP) )
+		{
+			int step_val;
+			sscanf(input_str, "%s %d", command, &step_val);
+			pthread_mutex_lock(&data_mutex);
+			emu_step_point = step_val;
+			emu_state = EMU_CONTINUE;
+			pthread_cond_signal(&breakpoint_cond);
+			pthread_mutex_unlock(&data_mutex);
+		}
+		else if ( check_command_value(command, CMD_NEXT) )
+		{
+			pthread_mutex_lock(&data_mutex);
+			emu_step_point = emu_get_next_instr();
+			emu_state = EMU_CONTINUE;
+			pthread_cond_signal(&breakpoint_cond);
+			pthread_mutex_unlock(&data_mutex);
+		}
+		else if ( check_command_value(command, CMD_HELP) )
+		{
+			enable_help = true;
 		}
 		clear_window_input_buffer(POPUP_win);
 		printPOPUP();
@@ -139,6 +186,28 @@ void printPOPUP(void)
 
 }
 
+void printHELP(void)
+{
+	clear_window(HELP_win);
+	print_to_window(HELP_win, 1, "Type help / h / ?: To get this help menu");
+	print_to_window(HELP_win, 1, "");
+	print_to_window(HELP_win, 1, "Commands that can be used -");
+	print_to_window(HELP_win, 1, "breakpoint X / b X:");
+	print_to_window(HELP_win, 1, "will place a breakpoint at the specified ROM location.");
+	print_to_window(HELP_win, 1, "");
+	print_to_window(HELP_win, 1, "continue / c:");
+	print_to_window(HELP_win, 1, "will continue execution until next breakpoint.");
+	print_to_window(HELP_win, 1, "");
+	print_to_window(HELP_win, 1, "next / n:");
+	print_to_window(HELP_win, 1, "will continue to the next instruction.");
+	print_to_window(HELP_win, 1, "");
+	print_to_window(HELP_win, 1, "step X / s X:");
+	print_to_window(HELP_win, 1, "will continue execution until the specified ROM location.");
+	refresh_window(HELP_win);
+	wgetch(HELP_win->win);
+	enable_help = false;
+	clear_window(HELP_win);
+}
 
 void printMISC(void)
 {
@@ -148,7 +217,8 @@ void printMISC(void)
 	print_to_window(MISC_win, 0, "A = %02XH;  ", a);
 	print_to_window(MISC_win, 0, "B = %02XH;  ", b);
 	print_to_window(MISC_win, 0, "SP = %02XH;  ", ram[0x81]);
-	print_to_window(MISC_win, 0, "DPTR = %04XH;", dptr);
+	print_to_window(MISC_win, 1, "DPTR = %04XH;", dptr);
+	print_to_window(MISC_win, 1, "XTAL = %5f MHz;", XTALfreq);
 	refresh_window(MISC_win);
 }
 
