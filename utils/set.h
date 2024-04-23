@@ -11,6 +11,7 @@ typedef struct Set {
 
 Set* create_set(unsigned int len);
 void delete_set(Set* set);
+void change_set_size(Set* set, unsigned int len);
 
 void insert_set(Set* set, int val);
 void erase_set(Set* set, int val);

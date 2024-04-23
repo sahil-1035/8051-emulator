@@ -18,8 +18,18 @@ void insert_set(Set* set, int val)
 {
 	if ( find_in_set(set, val) )
 		return;
+
+	if ( length_of_set(set) >= set->max_len )
+		change_set_size(set, set->max_len * 2);
+
 	set->arr[set->pointer] = val;
 	set->pointer++;
+}
+
+void change_set_size(Set* set, unsigned int len)
+{
+	set->arr = (int*) realloc(set->arr, len * sizeof(int) );
+	set->max_len = len;
 }
 
 char* get_str_set(Set* set, char* buff)
@@ -60,7 +70,7 @@ void erase_set(Set* set, int val)
 	}
 	assert( val_at != -1 );
 
-	memcpy(set->arr + val_at, set->arr + val_at + 1, length_of_set(set) - val_at);
+	memcpy(set->arr + val_at, set->arr + val_at + 1, (length_of_set(set) - val_at) * sizeof(int));
 	set->pointer--;
 }
 
