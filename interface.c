@@ -14,7 +14,7 @@
 
 typedef enum Commands
 {
-	CMD_BREAKPOINT, CMD_CONTINUE, CMD_HELP, CMD_STEP, CMD_NEXT
+	CMD_BREAKPOINT, CMD_CONTINUE, CMD_HELP, CMD_MOVE, CMD_NEXT, CMD_SET
 } Commands;
 
 Window *ROM_win, *RAM_win, *MISC_win, *POPUP_win, *HELP_win;
@@ -100,9 +100,13 @@ bool check_command_value(char* command, Commands command_val)
 {
 	switch (command_val)
 	{
-	case CMD_STEP:
-		return (strcmp(command, "step") == 0) ||
+	case CMD_SET:
+		return (strcmp(command, "set") == 0) ||
 			(strcmp(command, "s") == 0);
+			break;
+	case CMD_MOVE:
+		return (strcmp(command, "move") == 0) ||
+			(strcmp(command, "m") == 0);
 			break;
 	case CMD_NEXT:
 		return (strcmp(command, "next") == 0) ||
@@ -151,7 +155,7 @@ void manage_input(void)
 			pthread_cond_signal(&breakpoint_cond);
 			pthread_mutex_unlock(&data_mutex);
 		}
-		else if ( check_command_value(command, CMD_STEP) )
+		else if ( check_command_value(command, CMD_MOVE) )
 		{
 			int step_val;
 			sscanf(input_str, "%s %d", command, &step_val);
@@ -167,6 +171,29 @@ void manage_input(void)
 			emu_step_point = emu_get_next_instr();
 			emu_state = EMU_CONTINUE;
 			pthread_cond_signal(&breakpoint_cond);
+			pthread_mutex_unlock(&data_mutex);
+		}
+		else if ( check_command_value(command, CMD_SET) )
+		{
+			char var[30];
+			int data_val;
+			sscanf(input_str, "%s %s %xd", command, var, &data_val);
+			pthread_mutex_lock(&data_mutex);
+			if ( (strcmp(var, "A") == 0) || (strcmp(var, "a") == 0))
+				a = data_val;
+			else if ( (strcmp(var, "B") == 0) || (strcmp(var, "b") == 0))
+				b = data_val;
+			else if ( (strcmp(var, "PC") == 0) || (strcmp(var, "pc") == 0))
+				pc = data_val;
+			else if ( (strcmp(var, "SP") == 0) || (strcmp(var, "sp") == 0))
+				ram[0x81] = data_val;
+			else if ( (strcmp(var, "DPTR") == 0) || (strcmp(var, "dptr") == 0))
+				dptr = data_val;
+			else if ( (strcmp(var, "PSW") == 0) || (strcmp(var, "psw") == 0))
+			{
+				sscanf(input_str, "%s %s %bd", command, var, &data_val);
+				psw = data_val;
+			}
 			pthread_mutex_unlock(&data_mutex);
 		}
 		else if ( check_command_value(command, CMD_HELP) )
@@ -202,8 +229,13 @@ void printHELP(void)
 	print_to_window(HELP_win, 1, "next / n:");
 	print_to_window(HELP_win, 1, "will continue to the next instruction.");
 	print_to_window(HELP_win, 1, "");
-	print_to_window(HELP_win, 1, "step X / s X:");
+	print_to_window(HELP_win, 1, "move X / m X:");
 	print_to_window(HELP_win, 1, "will continue execution until the specified ROM location.");
+	print_to_window(HELP_win, 1, "");
+	print_to_window(HELP_win, 1, "set X Y / m X Y:");
+	print_to_window(HELP_win, 1, "will set the value of the X register to Y.");
+	print_to_window(HELP_win, 1, "Eg., 'set A 45' will set the A register to 45.");
+	print_to_window(HELP_win, 1, "supported registers - A, B, SP, PC, DPTR and PSW.");
 	refresh_window(HELP_win);
 	wgetch(HELP_win->win);
 	enable_help = false;
