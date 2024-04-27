@@ -77,8 +77,10 @@ void emu_clear_ram(void)
 }
 void add_to_A(byte addend)
 {
-	if( a > a + addend)
-		setPSW(2, 1);
+	if ( a < ( a + addend))
+		setPSW(PSW_CY_POS, 1);
+	if ( (a & 0b00001111) < ((a + addend) & 0b00001111) )
+		setPSW(PSW_AC_POS, 1);
 	a = a + addend;
 }
 
@@ -700,136 +702,135 @@ void emu_exec_instr(void)
 
 		// DJNZ
 		case 0xD5: // DJNZ iram addr,reladdr
-			pc = --ram[rom[++pc]] ? rom[pc + 1] - 1 : pc;
+			pc = --ram[rom[++pc]] ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 		case 0xD8: // DJNZ R0,reladdr
-			pc = --ram[R0] ? rom[ pc + 1 ] : pc;
+			pc = --R0 ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 		case 0xD9: // DJNZ R1,reladdr
-			pc = --ram[R1] ? rom[ pc + 1 ] : pc;
+			pc = --R1 ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 		case 0xDA: // DJNZ R2,reladdr
-			pc = --ram[R2] ? rom[ pc + 1 ] : pc;
+			pc = --R2 ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 		case 0xDB: // DJNZ R3,reladdr
-			pc = --ram[R3] ? rom[ pc + 1 ] : pc;
+			pc = --R3 ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 		case 0xDC: // DJNZ R4,reladdr
-			pc = --ram[R4] ? rom[ pc + 1 ] : pc;
+			pc = --R4 ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 		case 0xDD: // DJNZ R5,reladdr
-			pc = --ram[R5] ? rom[ pc + 1 ] : pc;
+			pc = --R5 ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 		case 0xDE: // DJNZ R6,reladdr
-			pc = --ram[R6] ? rom[ pc + 1 ] : pc;
+			pc = --R6 ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 		case 0xDF: // DJNZ R7,reladdr
-			pc = --ram[R7] ? rom[ pc + 1 ] : pc;
+			pc = --R7 ? pc + (char)rom[pc + 1] - 2 : pc;
 			pc++;
 			break;
 
 		// CJNE
 		case 0xB4: // CJNE A,#data,reladdr
-			pc = (a == rom[ pc + 1 ]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ] - 1;
+			pc = (a == rom[ pc + 1 ]) ? pc :  pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xB5: // CJNE A,iram addr,reladdr
-			// TODO: Change the following instructions to reflect relative jump (mb) (like above)
-			pc = (a == ram[rom[ pc + 1 ]]) ? pc : rom[ pc + 2 ] - 1;
+			pc = (a == ram[rom[ pc + 1 ]]) ? pc : pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xB6: // CJNE @R0,#data,reladdr
-			pc = (a == ram[R0]) ? pc : ram[R0] - 1;
+			pc = (ram[R0] == rom[pc + 1]) ? pc :  pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xB7: // CJNE @R1,#data,reladdr
-			pc = (a == ram[R1]) ? pc : ram[R1] - 1;
+			pc = (ram[R1] == rom[ pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xB8: // CJNE R0,#data,reladdr
-			pc = (a == R0) ? pc : R0 - 1;
+			pc = (R0 == rom[pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xB9: // CJNE R1,#data,reladdr
-			pc = (a == R1) ? pc : R1 - 1;
+			pc = (R1 == rom[pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xBA: // CJNE R2,#data,reladdr
-			pc = (a == R2) ? pc : R2 - 1;
+			pc = (R2 == rom[pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xBB: // CJNE R3,#data,reladdr
-			pc = (a == R3) ? pc : R3 - 1;
+			pc = (R3 == rom[pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xBC: // CJNE R4,#data,reladdr
-			pc = (a == R4) ? pc : R4 - 1;
+			pc = (R4 == rom[pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xBD: // CJNE R5,#data,reladdr
-			pc = (a == R5) ? pc : R5 - 1;
+			pc = (R5 == rom[pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xBE: // CJNE R6,#data,reladdr
-			pc = (a == R6) ? pc : R6 - 1;
+			pc = (R6 == rom[pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		case 0xBF: // CJNE R7,#data,reladdr
-			pc = (a == R7) ? pc : R7 - 1;
+			pc = (R7 == rom[pc + 1]) ? pc : instructions[0xB4].no_of_bytes + pc + (char)rom[ pc + 2 ];
 			setPSW( PSW_CY_POS, ( a < rom[ pc + 1 ]));
-			pc++;
+			pc += 2;
 			break;
 		
 		// JC
 		case 0x40:
 			if (PSW_CY)
-				pc = rom[ pc + 1 ];
+				pc = pc + (char)rom[ pc + 1 ];
 			else
 				pc++;
 			break;
 		// JNC
 		case 0x50:
 			if (!PSW_CY)
-				pc = rom[ pc + 1 ];
+				pc = pc + (char)rom[ pc + 1 ];
 			else
 				pc++;
 			break;
 		// JZ
 		case 0x60:
 			if (!a)
-				pc = rom[ pc + 1 ];
+				pc = pc + (char)rom[ pc + 1 ];
 			else
 				pc++;
 			break;
 		// JNZ
 		case 0x70:
 			if (a)
-				pc = rom[ pc + 1 ];
+				pc = pc + (char)rom[ pc + 1 ];
 			else
 				pc++;
 			break;
 		// SJMP
 		case 0x80: // SJMP reladdr
-			pc = pc + (char)rom[ pc + 1 ] + instructions[0x80].no_of_bytes;
+			pc = pc + (char)rom[ pc + 1 ] + instructions[0x80].no_of_bytes - 1;
 			break;
 		// RR A
 		case 0x03:
@@ -1033,19 +1034,19 @@ void emu_exec_instr(void)
 
 		// JBC
 		case 0x10: // JBC bit addr,reladdr
-			tmpWord = getBit(rom[pc + 1])? rom[ pc + 2 ] - 1 : pc + 2;
+			tmpWord = getBit(rom[pc + 1])? pc + (char)rom[ pc + 2 ] - 1 : pc + 2;
 			writeBit(0, rom[ pc + 1]);
 			pc = tmpWord;
 			break;
 
 		// JB
 		case 0x20: // JB bit addr,reladdr
-			pc = getBit(rom[pc + 1])? rom[ pc + 2 ] - 1 : pc + 2;
+			pc = getBit(rom[pc + 1])? pc + (char)rom[ pc + 2 ] - 1 : pc + 2;
 			break;
 
 		// JNB
 		case 0x30: // JNB bit addr,reladdr
-			pc = getBit(rom[pc + 1])? rom[ pc + 2 ] - 1 : pc + 2;
+			pc = getBit(rom[pc + 1])? pc + (char)rom[ pc + 2 ] - 1 : pc + 2;
 			break;
 
 		// MOVC

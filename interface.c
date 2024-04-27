@@ -24,8 +24,9 @@ bool interface_quit;
 
 void interface_main(void)
 {
-	emu_init("num1.bin");
+	emu_init("add.bin");
 	init_curses();
+	insert_set(breakpoints, 0);
 
 	pthread_t emulator_thread;
 	pthread_create(&emulator_thread, NULL, (void* (*)(void*))emu_start, NULL);
@@ -219,6 +220,7 @@ void printMISC(void)
 	print_to_window(MISC_win, 0, "SP = %02XH;  ", ram[0x81]);
 	print_to_window(MISC_win, 1, "DPTR = %04XH;", dptr);
 	print_to_window(MISC_win, 1, "XTAL = %5f MHz;", XTALfreq);
+	print_to_window(MISC_win, 1, "PSW = %08b;", psw);
 	refresh_window(MISC_win);
 }
 

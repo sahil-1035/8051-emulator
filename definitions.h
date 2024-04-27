@@ -42,5 +42,5 @@ extern const struct instr instructions[256];
 
 typedef bool bit;
 typedef unsigned char byte;
-typedef short int word;
+typedef int word;
 #endif
