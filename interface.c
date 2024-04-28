@@ -17,7 +17,7 @@ typedef enum Commands
 	CMD_BREAKPOINT, CMD_CONTINUE, CMD_HELP, CMD_MOVE, CMD_NEXT, CMD_SET
 } Commands;
 
-Window *ROM_win, *RAM_win, *MISC_win, *POPUP_win, *HELP_win;
+Window *ROM_win, *RAM_win, *MISC_win, *CMD_win, *HELP_win, *PORT_win;
 
 bool enable_help;
 bool interface_quit;
@@ -31,7 +31,7 @@ void interface_main(void)
 	pthread_t emulator_thread;
 	pthread_create(&emulator_thread, NULL, (void* (*)(void*))emu_start, NULL);
 
-	printPOPUP();
+	printCMD();
 
 	while ( !emu_quit )
 	{
@@ -71,12 +71,14 @@ void init_curses(void)
 	ROM_win = malloc(sizeof(Window));
 	RAM_win = malloc(sizeof(Window));
 	MISC_win = malloc(sizeof(Window));
-	POPUP_win = malloc(sizeof(Window));
+	CMD_win = malloc(sizeof(Window));
 	HELP_win = malloc(sizeof(Window));
+	PORT_win = malloc(sizeof(Window));
 	create_window(ROM_win, " ROM ", height - 1, 50, 0, 0);
 	create_window(RAM_win, " RAM ", 18, width - 106 - 11, 0, 52);
 	create_window(MISC_win, " MISC ", height - 1 - 18, width - 106 - 11, 18, 52);
-	create_window(POPUP_win, " COMMAND ", 3, 40, height - 4, width - 64);
+	create_window(CMD_win, " COMMAND ", 3, 40, height - 4, width - 64);
+	create_window(PORT_win, " PORTS ", 6, 16, 0, 110);
 	int HELP_win_x = 74;
 	int HELP_win_y = 30;
 	create_window(HELP_win, " HELP ", HELP_win_y, HELP_win_x, \
@@ -92,7 +94,8 @@ void print_curses(void)
 		printRAM();
 		printROM();
 		printMISC();
-		printPOPUP();
+		printPORTS();
+		printCMD();
 	}
 }
 
@@ -134,9 +137,9 @@ bool check_command_value(char* command, Commands command_val)
 
 void manage_input(void)
 {
-	if ( get_window_input(POPUP_win) )
+	if ( get_window_input(CMD_win) )
 	{
-		char* input_str = get_window_input_str(POPUP_win);
+		char* input_str = get_window_input_str(CMD_win);
 
 		char command[30];
 		sscanf(input_str, "%s", command);
@@ -145,7 +148,10 @@ void manage_input(void)
 			int breakpoint_val;
 			sscanf(input_str, "%s %d", command, &breakpoint_val);
 			pthread_mutex_lock(&data_mutex);
-			insert_set(breakpoints, breakpoint_val);
+			if (find_in_set(breakpoints, breakpoint_val))
+				erase_set(breakpoints, breakpoint_val);
+			else
+				insert_set(breakpoints, breakpoint_val);
 			pthread_mutex_unlock(&data_mutex);
 		}
 		else if ( check_command_value(command, CMD_CONTINUE) )
@@ -191,7 +197,7 @@ void manage_input(void)
 				dptr = data_val;
 			else if ( (strcmp(var, "PSW") == 0) || (strcmp(var, "psw") == 0))
 			{
-				sscanf(input_str, "%s %s %bd", command, var, &data_val);
+				sscanf(input_str, "%s %s %b", command, var, &data_val);
 				psw = data_val;
 			}
 			pthread_mutex_unlock(&data_mutex);
@@ -200,18 +206,32 @@ void manage_input(void)
 		{
 			enable_help = true;
 		}
-		clear_window_input_buffer(POPUP_win);
-		printPOPUP();
+		clear_window_input_buffer(CMD_win);
+		printCMD();
 	}
 }
 
-void printPOPUP(void)
+void printCMD(void)
 {
-	clear_window(POPUP_win);
-	print_to_window(POPUP_win, 0, "> ");
-	print_to_window(POPUP_win, 0, "%s", get_window_input_str(POPUP_win));
-	refresh_window(POPUP_win);
+	clear_window(CMD_win);
+	print_to_window(CMD_win, 0, "> ");
+	print_to_window(CMD_win, 0, "%s", get_window_input_str(CMD_win));
+	refresh_window(CMD_win);
 
+}
+
+void printPORTS(void)
+{
+	clear_window(PORT_win);
+	print_to_window(PORT_win, 0, "P0\t");
+	print_to_window(PORT_win, 1, "%08b", ram[0x80]);
+	print_to_window(PORT_win, 0, "P1\t");
+	print_to_window(PORT_win, 1, "%08b", ram[0x90]);
+	print_to_window(PORT_win, 0, "P2\t");
+	print_to_window(PORT_win, 1, "%08b", ram[0xa0]);
+	print_to_window(PORT_win, 0, "P3\t");
+	print_to_window(PORT_win, 1, "%08b", ram[0xb0]);
+	refresh_window(PORT_win);
 }
 
 void printHELP(void)

@@ -5,7 +5,7 @@
 
 #include "window.h"
 
-extern Window *ROM_win, *RAM_win, *MISC_win, *POPUP_win;
+extern Window *ROM_win, *RAM_win, *MISC_win, *CMD_win, *HELP_win, *PORT_win;
 
 extern bool interface_quit;
 
@@ -17,6 +17,7 @@ void print_curses(void);
 void printROM(void);
 void printRAM(void);
 void printMISC(void);
-void printPOPUP(void);
+void printCMD(void);
 void printHELP(void);
+void printPORTS(void);
 #endif
