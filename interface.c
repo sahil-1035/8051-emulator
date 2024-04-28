@@ -88,7 +88,10 @@ void init_curses(void)
 void print_curses(void)
 {
 	if ( enable_help )
+	{
 		printHELP();
+		clear();
+	}
 	else
 	{
 		printRAM();
@@ -242,6 +245,7 @@ void printHELP(void)
 	print_to_window(HELP_win, 1, "Commands that can be used -");
 	print_to_window(HELP_win, 1, "breakpoint X / b X:");
 	print_to_window(HELP_win, 1, "will place a breakpoint at the specified ROM location.");
+	print_to_window(HELP_win, 1, "If the breakpoint already exists, it removes the breakpoint.");
 	print_to_window(HELP_win, 1, "");
 	print_to_window(HELP_win, 1, "continue / c:");
 	print_to_window(HELP_win, 1, "will continue execution until next breakpoint.");
