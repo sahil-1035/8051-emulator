@@ -1041,12 +1041,16 @@ void emu_exec_instr(void)
 
 		// JB
 		case 0x20: // JB bit addr,reladdr
-			pc = getBit(rom[pc + 1])? pc + (char)rom[ pc + 2 ] - 1 : pc + 2;
+			pc = getBit(rom[pc + 1])?
+				pc + (char)rom[ pc + 2 ] + instructions[0x20].no_of_bytes - 1 :
+				pc + 2;
 			break;
 
 		// JNB
 		case 0x30: // JNB bit addr,reladdr
-			pc = getBit(rom[pc + 1])? pc + (char)rom[ pc + 2 ] - 1 : pc + 2;
+			pc = (!getBit(rom[pc + 1]))?
+				pc + (char)rom[ pc + 2 ] + instructions[0x30].no_of_bytes - 1:
+				pc + 2;
 			break;
 
 		// MOVC
@@ -1069,6 +1073,28 @@ void emu_exec_instr(void)
 				break;
 	}
 	pc += 1;
+	// Manage Timers
+	if ( TR0 )
+	{
+		if ( TL0 > (byte)(TL0 + 1) )
+		{
+			if ( TH0 > (byte)(TH0 + 1) )
+				writeBit(1, TF0_POS);
+			TH0++;
+		}
+		TL0++;
+	}
+	if ( TR1 )
+	{
+		if ( TL1 > (byte)(TL1 + 1) )
+		{
+			if ( TH1 > (byte)(TH1 + 1) )
+				writeBit(1, TF1_POS);
+			TH1++;
+		}
+		TL1++;
+	}
+	pthread_mutex_unlock(&data_mutex);
 	pthread_mutex_unlock(&data_mutex);
 
 	struct timespec nowTime;

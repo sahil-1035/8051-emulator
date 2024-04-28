@@ -149,7 +149,7 @@ void manage_input(void)
 		if ( check_command_value(command, CMD_BREAKPOINT) )
 		{
 			int breakpoint_val;
-			sscanf(input_str, "%s %d", command, &breakpoint_val);
+			sscanf(input_str, "%s %x", command, &breakpoint_val);
 			pthread_mutex_lock(&data_mutex);
 			if (find_in_set(breakpoints, breakpoint_val))
 				erase_set(breakpoints, breakpoint_val);
@@ -167,7 +167,7 @@ void manage_input(void)
 		else if ( check_command_value(command, CMD_MOVE) )
 		{
 			int step_val;
-			sscanf(input_str, "%s %d", command, &step_val);
+			sscanf(input_str, "%s %x", command, &step_val);
 			pthread_mutex_lock(&data_mutex);
 			emu_step_point = step_val;
 			emu_state = EMU_CONTINUE;
@@ -186,7 +186,7 @@ void manage_input(void)
 		{
 			char var[30];
 			int data_val;
-			sscanf(input_str, "%s %s %xd", command, var, &data_val);
+			sscanf(input_str, "%s %s %x", command, var, &data_val);
 			pthread_mutex_lock(&data_mutex);
 			if ( (strcmp(var, "A") == 0) || (strcmp(var, "a") == 0))
 				a = data_val;
