@@ -203,7 +203,7 @@ void manage_input(void)
 			else if ( (strcmp(var, "SP") == 0) || (strcmp(var, "sp") == 0))
 				ram[0x81] = data_val;
 			else if ( (strcmp(var, "DPTR") == 0) || (strcmp(var, "dptr") == 0))
-				dptr = data_val;
+				set_dptr(data_val);
 			else if ( (strcmp(var, "PSW") == 0) || (strcmp(var, "psw") == 0))
 			{
 				sscanf(input_str, "%s %s %b", command, var, &data_val);
@@ -299,7 +299,7 @@ void printMISC(void)
 	print_to_window(MISC_win, 0, "A = %02XH;  ", a);
 	print_to_window(MISC_win, 0, "B = %02XH;  ", b);
 	print_to_window(MISC_win, 0, "SP = %02XH;  ", ram[0x81]);
-	print_to_window(MISC_win, 1, "DPTR = %04XH;", dptr);
+	print_to_window(MISC_win, 1, "DPTR = %04XH;", get_dptr());
 	print_to_window(MISC_win, 1, "XTAL = %5f MHz;", XTALfreq);
 	print_to_window(MISC_win, 1, "PSW = %08b;", psw);
 	refresh_window(MISC_win);

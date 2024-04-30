@@ -29,14 +29,11 @@ extern unsigned short ROM_FILE_LEN;
 
 extern byte rom[ROM_SIZE];
 extern byte ram[RAM_SIZE];
+extern byte* bit_addressable_map[32];
 
 extern word pc;
-extern word dptr;
-
-extern byte sp;
-extern byte a;
-extern byte b;
-extern byte psw;
+void set_dptr(word val);
+word get_dptr(void);
 
 extern short int register_bank;
 extern byte *R0p, *R1p, *R2p, *R3p, *R4p, *R5p, *R6p, *R7p, *R8p;

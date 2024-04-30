@@ -21,20 +21,64 @@ const float timePeriodPerMachineCycle = 1000.0f / (XTALfreq / 12);
 
 byte rom[ROM_SIZE];
 byte ram[RAM_SIZE];
+byte* bit_addressable_map[32];
 
 unsigned short ROM_FILE_LEN = 0;
 
 word pc = 0x0000;
-word dptr = 0x0000;
-
-byte a = 0x00;
-byte b = 0x00;
-byte psw = 0x00;
 
 short int register_bank = 0;
 byte *R0p, *R1p, *R2p, *R3p, *R4p, *R5p, *R6p, *R7p, *R8p;
 
 bool emu_quit = false;
+
+
+void set_dptr(word val)
+{
+	dpl = val & 0b11111111;
+	dph = val & (0b11111111 << 8);
+}
+
+word get_dptr(void)
+{
+	word val = 0;
+	val |= dpl;
+	val |= dph << 8;
+	return val;
+}
+
+static void set_up_bit_addresible_map(void)
+{
+	for(unsigned int i = 0; i < 16; i++)
+		bit_addressable_map[i] = &ram[0x20 + i];
+	// P0
+	bit_addressable_map[16] = &ram[0x80];
+	// TCON
+	bit_addressable_map[17] = &ram[0x88];
+	// P1
+	bit_addressable_map[18] = &ram[0x90];
+	// SCON
+	bit_addressable_map[19] = &ram[0x98];
+	// P2
+	bit_addressable_map[20] = &ram[0xA0];
+	// IE
+	bit_addressable_map[21] = &ram[0xA8];
+	// P3
+	bit_addressable_map[22] = &ram[0xB0];
+	// IP
+	bit_addressable_map[23] = &ram[0xB8];
+	bit_addressable_map[24] = NULL;
+	bit_addressable_map[25] = NULL;
+	// PSW
+	bit_addressable_map[26] = &ram[0xD0];
+	bit_addressable_map[27] = NULL;
+	// ACC
+	bit_addressable_map[28] = &ram[0xE0];
+	bit_addressable_map[29] = NULL;
+	// B
+	bit_addressable_map[30] = &ram[0xF0];
+	bit_addressable_map[31] = NULL;
+}
 
 void emu_init(const char* ROMpath)
 {
@@ -45,6 +89,7 @@ void emu_init(const char* ROMpath)
 	emu_load_ROM(ROMpath);
 	change_bank(0);
 	emu_clear_ram();
+	set_up_bit_addresible_map();
 }
 
 void emu_reset(void)
@@ -75,7 +120,7 @@ void emu_load_ROM(const char* ROMpath)
 void emu_clear_ram(void)
 {
 	pc = 0x0000;
-	dptr = 0x0000;
+	set_dptr(0);
 	a = 0x00;
 	b = 0x00;
 	register_bank = 0;
@@ -125,20 +170,21 @@ void setPSW(short int pos, bool val)
 
 bit getBit(byte address)
 {
-	return (bit)(ram[ 0x20 + address / 8 ] & ( 0b10000000 >> ( address % 8 )));
+	return (bit)((*bit_addressable_map[address / 8]) & ( 0b10000000 >> ( address % 8 )));
 }
 
 void writeBit(bit val, byte address)
 {
-	bit prevVal = ram[ 0x20 + address / 8 ] & (0b10000000 >> (address % 8));
+	bit prevVal = (*bit_addressable_map[address / 8]) & (0b10000000 >> (address % 8));
 	if (prevVal == val)
 		return;
-	ram[ 0x20 + address / 8 ] = prevVal ? 
-		ram[ 0x20 + address / 8 ] & (~(0b10000000 >> (address % 8)))
-		: ram[ 0x20 + address / 8 ] | (0b10000000 >> (address % 8));
+	(*bit_addressable_map[address / 8]) = prevVal ?
+		(*bit_addressable_map[address / 8]) & (~(0b10000000 >> (address % 8)))
+		: (*bit_addressable_map[address / 8]) | (0b10000000 >> (address % 8));
+	return;
 }
 
-void manage_timers(void)
+static void manage_timers(void)
 {
 	if ( TR0 && !TF0 )
 	{
@@ -319,7 +365,7 @@ void emu_exec_instr(void)
 			R7++;
 			break;
 		case 0xA3: // INC DPTR	
-			dptr++;
+			set_dptr( get_dptr() + 1 );
 			break;
 		case 0x24: // ADD A,#data
 			add_to_A(rom[++pc]);
@@ -495,7 +541,7 @@ void emu_exec_instr(void)
 			setPSW(PSW_CY_POS, getBit( rom[++pc] ));
 			break;
 		case 0x90: // MOV DPTR,#data16	
-			dptr = ( rom[pc + 1] << 8) | rom[pc + 2];
+			set_dptr(( rom[pc + 1] << 8) | rom[pc + 2]);
 			pc += 2;
 			break;
 		case 0x78: // MOV R0,#data	
@@ -1056,7 +1102,7 @@ void emu_exec_instr(void)
 			break;
 
 		case 0x73: // JMP @A+DPTR
-			pc = a + dptr - 1;
+			pc = a + get_dptr() - 1;
 			break;
 
 		// SUBB
@@ -1120,7 +1166,7 @@ void emu_exec_instr(void)
 
 		// MOVC
 		case 0x93: // MOVC A,@A+DPTR
-			a = rom[a + dptr];
+			a = rom[a + get_dptr()];
 			break;
 		case 0x83: // MOVC A,@A+PC
 			a = rom[a + pc];

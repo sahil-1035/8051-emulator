@@ -11,6 +11,13 @@ extern const struct instr instructions[256];
 #define RAM_SIZE 256
 #define ROM_SIZE 4096
 
+#define a ram[0xE0]
+#define b ram[0xF0]
+#define psw ram[0xD0]
+
+#define dpl ram[0x82]
+#define dph ram[0x83]
+
 #define SP ram[0x81]
 #define TMOD ram[0x89]
 #define TL0 ram[0x8A]
