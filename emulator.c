@@ -80,16 +80,18 @@ static void set_up_bit_addresible_map(void)
 	bit_addressable_map[31] = NULL;
 }
 
-void emu_init(const char* ROMpath)
+int emu_init(const char* ROMpath)
 {
 	breakpoints = create_set(20);
 	insert_set(breakpoints, 0);
 	emu_step_point = -1;
 	emu_state = EMU_RUNNING;
-	emu_load_ROM(ROMpath);
+	if ( emu_load_ROM(ROMpath) == -1 )
+		return -1;
 	change_bank(0);
 	emu_clear_ram();
 	set_up_bit_addresible_map();
+	return 0;
 }
 
 void emu_reset(void)
@@ -101,19 +103,20 @@ void emu_reset(void)
 	emu_clear_ram();
 }
 
-void emu_load_ROM(const char* ROMpath)
+int emu_load_ROM(const char* ROMpath)
 {
 	FILE* ROMfile = fopen(ROMpath, "rb");
 	if (ROMfile == NULL)
 	{
 		emu_return_cause = ROM_CANT_BE_ACCESSED;
-		return;
+		return -1;
 	}
 	fseek(ROMfile, 0, SEEK_END);
 	ROM_FILE_LEN = ftell(ROMfile);
 	fseek(ROMfile, 0, SEEK_SET);
 	fread(rom, sizeof(rom), 1, ROMfile);
 	fclose(ROMfile);
+	return 0;
 }
 
 

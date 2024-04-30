@@ -22,9 +22,14 @@ Window *ROM_win, *RAM_win, *MISC_win, *CMD_win, *HELP_win, *PORT_win, *TIMER_win
 bool enable_help;
 bool interface_quit;
 
-void interface_main(void)
+void interface_main(const char* bin_path)
 {
-	emu_init("add.bin");
+	if ( emu_init(bin_path) == -1)
+	{
+		if (emu_return_cause == ROM_CANT_BE_ACCESSED)
+			printf("ROM file could not be opened.\n");
+		return;
+	}
 	init_curses();
 
 	pthread_t emulator_thread;
