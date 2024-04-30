@@ -39,9 +39,19 @@ bool emu_quit = false;
 void emu_init(const char* ROMpath)
 {
 	breakpoints = create_set(20);
+	insert_set(breakpoints, 0);
 	emu_step_point = -1;
 	emu_state = EMU_RUNNING;
 	emu_load_ROM(ROMpath);
+	change_bank(0);
+	emu_clear_ram();
+}
+
+void emu_reset(void)
+{
+	clear_set(breakpoints);
+	insert_set(breakpoints, 0);
+	emu_step_point = -1;
 	change_bank(0);
 	emu_clear_ram();
 }
@@ -124,9 +134,64 @@ void writeBit(bit val, byte address)
 	if (prevVal == val)
 		return;
 	ram[ 0x20 + address / 8 ] = prevVal ? 
-		ram[ 0x20 + address / 8 ] & (!(0b10000000 >> (address % 8)))
+		ram[ 0x20 + address / 8 ] & (~(0b10000000 >> (address % 8)))
 		: ram[ 0x20 + address / 8 ] | (0b10000000 >> (address % 8));
 }
+
+void manage_timers(void)
+{
+	if ( TR0 && !TF0 )
+	{
+		switch (TMOD & 0b00000011)
+		{
+			case 1:
+				if ( TL0 > (byte)(TL0 + 1) )
+				{
+					if ( TH0 > (byte)(TH0 + 1) )
+						writeBit(1, TF0_POS);
+					TH0++;
+				}
+				TL0++;
+				break;
+			case 2:
+				if ( TL0 < TH0 )
+					TL0 = TH0;
+				if ( TL0 > (byte)(TL0 + 1) )
+				{
+					writeBit(1, TF0_POS);
+					TL0 = TH0;
+				}
+				TL0++;
+				break;
+		}
+	}
+	if ( TR1 && !TF1 )
+	{
+		switch (TMOD & 0b00000011)
+		{
+			case 1:
+				if ( TL1 > (byte)(TL1 + 1) )
+				{
+					if ( TH1 > (byte)(TH1 + 1) )
+						writeBit(1, TF1_POS);
+					TH1++;
+				}
+				TL1++;
+				break;
+			case 2:
+				if ( TL1 < TH1 )
+					TL1 = TH1;
+				if ( TL1 > (byte)(TL1 + 1) )
+				{
+					writeBit(1, TF1_POS);
+					TL1 = TH1;
+				}
+				TL1++;
+				break;
+		}
+	}
+}
+
 
 word emu_get_next_instr()
 {
@@ -1074,27 +1139,7 @@ void emu_exec_instr(void)
 	}
 	pc += 1;
 	// Manage Timers
-	if ( TR0 )
-	{
-		if ( TL0 > (byte)(TL0 + 1) )
-		{
-			if ( TH0 > (byte)(TH0 + 1) )
-				writeBit(1, TF0_POS);
-			TH0++;
-		}
-		TL0++;
-	}
-	if ( TR1 )
-	{
-		if ( TL1 > (byte)(TL1 + 1) )
-		{
-			if ( TH1 > (byte)(TH1 + 1) )
-				writeBit(1, TF1_POS);
-			TH1++;
-		}
-		TL1++;
-	}
-	pthread_mutex_unlock(&data_mutex);
+	manage_timers();
 	pthread_mutex_unlock(&data_mutex);
 
 	struct timespec nowTime;

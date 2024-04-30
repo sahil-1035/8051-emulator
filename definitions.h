@@ -22,6 +22,8 @@ extern const struct instr instructions[256];
 #define TR1 getBit(0x8E)
 #define TF0_POS 0x8D
 #define TF1_POS 0x8F
+#define TF0 getBit(TF0_POS)
+#define TF1 getBit(TF1_POS)
 
 #define PSW_CY_POS 7
 #define PSW_AC_POS 6

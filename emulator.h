@@ -54,6 +54,7 @@ extern bool emu_quit;
 
 void emu_init(const char* ROMpath);
 void emu_start(void);
+void emu_reset(void);
 void emu_exec_instr(void);
 void emu_clear_ram(void);
 

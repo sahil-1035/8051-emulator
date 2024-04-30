@@ -14,10 +14,10 @@
 
 typedef enum Commands
 {
-	CMD_BREAKPOINT, CMD_CONTINUE, CMD_HELP, CMD_MOVE, CMD_NEXT, CMD_SET
+	CMD_BREAKPOINT, CMD_CONTINUE, CMD_HELP, CMD_MOVE, CMD_NEXT, CMD_SET, CMD_RUN
 } Commands;
 
-Window *ROM_win, *RAM_win, *MISC_win, *CMD_win, *HELP_win, *PORT_win;
+Window *ROM_win, *RAM_win, *MISC_win, *CMD_win, *HELP_win, *PORT_win, *TIMER_win;
 
 bool enable_help;
 bool interface_quit;
@@ -26,7 +26,6 @@ void interface_main(void)
 {
 	emu_init("add.bin");
 	init_curses();
-	insert_set(breakpoints, 0);
 
 	pthread_t emulator_thread;
 	pthread_create(&emulator_thread, NULL, (void* (*)(void*))emu_start, NULL);
@@ -74,11 +73,13 @@ void init_curses(void)
 	CMD_win = malloc(sizeof(Window));
 	HELP_win = malloc(sizeof(Window));
 	PORT_win = malloc(sizeof(Window));
+	TIMER_win = malloc(sizeof(Window));
 	create_window(ROM_win, " ROM ", height - 1, 50, 0, 0);
 	create_window(RAM_win, " RAM ", 18, width - 106 - 11, 0, 52);
 	create_window(MISC_win, " MISC ", height - 1 - 18, width - 106 - 11, 18, 52);
 	create_window(CMD_win, " COMMAND ", 3, 40, height - 4, width - 64);
 	create_window(PORT_win, " PORTS ", 6, 16, 0, 110);
+	create_window(TIMER_win, " TIMER ", 8, 26, 6, 110);
 	int HELP_win_x = 74;
 	int HELP_win_y = 30;
 	create_window(HELP_win, " HELP ", HELP_win_y, HELP_win_x, \
@@ -98,6 +99,7 @@ void print_curses(void)
 		printROM();
 		printMISC();
 		printPORTS();
+		printTIMER();
 		printCMD();
 	}
 }
@@ -106,6 +108,10 @@ bool check_command_value(char* command, Commands command_val)
 {
 	switch (command_val)
 	{
+	case CMD_RUN:
+		return (strcmp(command, "run") == 0) ||
+			(strcmp(command, "r") == 0);
+			break;
 	case CMD_SET:
 		return (strcmp(command, "set") == 0) ||
 			(strcmp(command, "s") == 0);
@@ -205,6 +211,12 @@ void manage_input(void)
 			}
 			pthread_mutex_unlock(&data_mutex);
 		}
+		else if ( check_command_value(command, CMD_RUN) )
+		{
+			pthread_mutex_lock(&data_mutex);
+			emu_reset();
+			pthread_mutex_unlock(&data_mutex);
+		}
 		else if ( check_command_value(command, CMD_HELP) )
 		{
 			enable_help = true;
@@ -220,7 +232,16 @@ void printCMD(void)
 	print_to_window(CMD_win, 0, "> ");
 	print_to_window(CMD_win, 0, "%s", get_window_input_str(CMD_win));
 	refresh_window(CMD_win);
+}
 
+void printTIMER(void)
+{
+	clear_window(TIMER_win);
+	print_to_window(TIMER_win, 1, "TH0 = 0X%02X TL0 = 0X%02X", TH0, TL0);
+	print_to_window(TIMER_win, 1, "TH1 = 0X%02X TL1 = 0X%02X", TH1, TL1);
+	print_to_window(TIMER_win, 1, "TR0 = %b TF0 = %b", TR0, getBit(TF0_POS));
+	print_to_window(TIMER_win, 1, "TR1 = %b TF1 = %b", TR1, getBit(TF1_POS));
+	refresh_window(TIMER_win);
 }
 
 void printPORTS(void)
@@ -260,6 +281,10 @@ void printHELP(void)
 	print_to_window(HELP_win, 1, "will set the value of the X register to Y.");
 	print_to_window(HELP_win, 1, "Eg., 'set A 45' will set the A register to 45.");
 	print_to_window(HELP_win, 1, "supported registers - A, B, SP, PC, DPTR and PSW.");
+	print_to_window(HELP_win, 1, "");
+	print_to_window(HELP_win, 1, "run / r:");
+	print_to_window(HELP_win, 1, "will reset the 8051 microcontroller's ram and registers");
+	print_to_window(HELP_win, 1, "can be used to reset the microcontrollers state.");
 	refresh_window(HELP_win);
 	wgetch(HELP_win->win);
 	enable_help = false;
