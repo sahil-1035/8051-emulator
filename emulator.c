@@ -36,7 +36,7 @@ bool emu_quit = false;
 void set_dptr(word val)
 {
 	dpl = val & 0b11111111;
-	dph = val & (0b11111111 << 8);
+	dph = (val & (0b11111111 << 8)) >> 8;
 }
 
 word get_dptr(void)
@@ -170,17 +170,17 @@ void setPSW(short int pos, bool val)
 
 bit getBit(byte address)
 {
-	return (bit)((*bit_addressable_map[address / 8]) & ( 0b10000000 >> ( address % 8 )));
+	return (bit)((*bit_addressable_map[address / 8]) & ( 0b00000001 << ( address % 8 )));
 }
 
 void writeBit(bit val, byte address)
 {
-	bit prevVal = (*bit_addressable_map[address / 8]) & (0b10000000 >> (address % 8));
+	bit prevVal = (*bit_addressable_map[address / 8]) & (0b00000001 << (address % 8));
 	if (prevVal == val)
 		return;
 	(*bit_addressable_map[address / 8]) = prevVal ?
-		(*bit_addressable_map[address / 8]) & (~(0b10000000 >> (address % 8)))
-		: (*bit_addressable_map[address / 8]) | (0b10000000 >> (address % 8));
+		(*bit_addressable_map[address / 8]) & (~(0b10000001 << (address % 8)))
+		: (*bit_addressable_map[address / 8]) | (0b10000001 << (address % 8));
 	return;
 }
 
