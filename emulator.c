@@ -182,8 +182,8 @@ void writeBit(bit val, byte address)
 	if (prevVal == val)
 		return;
 	(*bit_addressable_map[address / 8]) = prevVal ?
-		(*bit_addressable_map[address / 8]) & (~(0b10000001 << (address % 8)))
-		: (*bit_addressable_map[address / 8]) | (0b10000001 << (address % 8));
+		(*bit_addressable_map[address / 8]) & (~(0b00000001 << (address % 8)))
+		: (*bit_addressable_map[address / 8]) | (0b00000001 << (address % 8));
 	return;
 }
 
