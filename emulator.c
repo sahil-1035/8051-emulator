@@ -132,6 +132,8 @@ void emu_clear_ram(void)
 	{
 		ram[i] = 0x000;
 	}
+
+	SP = 0x07;
 }
 void add_to_A(byte addend)
 {
@@ -296,6 +298,65 @@ void emu_exec_instr(void)
 	word tmpWord;
 	switch(opcode)
 	{
+		case 0x11: // ACALL page0
+			ram[ ++SP ] = pc & 0x0F;
+			ram[ ++SP ] = pc & 0xF0;
+			tmpWord = pc;
+			pc = pc & 0b1111100000000000;
+			pc |= rom[ tmpWord + 1 ];
+			pc |= (0) << 8;
+			pc--;
+			break;
+		case 0x31: // ACALL page1
+			ram[ ++SP ] = pc & 0x0F;
+			ram[ ++SP ] = pc & 0xF0;
+			pc = pc & 0b1111100000000000;
+			pc |= rom[ pc + 1 ];
+			pc |= (1) << 8;
+			break;
+		case 0x51: // ACALL page2
+			ram[ ++SP ] = pc & 0x0F;
+			ram[ ++SP ] = pc & 0xF0;
+			pc = pc & 0b1111100000000000;
+			pc |= rom[ pc + 1 ];
+			pc |= (2) << 8;
+			break;
+		case 0x71: // ACALL page3
+			ram[ ++SP ] = pc & 0x0F;
+			ram[ ++SP ] = pc & 0xF0;
+			pc = pc & 0b1111100000000000;
+			pc |= rom[ pc + 1 ];
+			pc |= (3) << 8;
+			break;
+		case 0x91: // ACALL page4
+			ram[ ++SP ] = pc & 0x0F;
+			ram[ ++SP ] = pc & 0xF0;
+			pc = pc & 0b1111100000000000;
+			pc |= rom[ pc + 1 ];
+			pc |= (4) << 8;
+			break;
+		case 0xB1: // ACALL page5
+			ram[ ++SP ] = pc & 0x0F;
+			ram[ ++SP ] = pc & 0xF0;
+			pc = pc & 0b1111100000000000;
+			pc |= rom[ pc + 1 ];
+			pc |= (5) << 8;
+			break;
+		case 0xD1: // ACALL page6
+			ram[ ++SP ] = pc & 0x0F;
+			ram[ ++SP ] = pc & 0xF0;
+			pc = pc & 0b1111100000000000;
+			pc |= rom[ pc + 1 ];
+			pc |= (6) << 8;
+			break;
+		case 0xF1: // ACALL page7
+			ram[ ++SP ] = pc & 0x0F;
+			ram[ ++SP ] = pc & 0xF0;
+			pc = pc & 0b1111100000000000;
+			pc |= rom[ pc + 1 ];
+			pc |= (7) << 8;
+			break;
+
 		// AJMP
 		case 0x01: // AJMP page0
 			pc = ( pc & 0b1111100000000000) | ( 0b0000000000000000 ) | rom[ pc + 1 ];
@@ -816,39 +877,39 @@ void emu_exec_instr(void)
 
 		// DJNZ
 		case 0xD5: // DJNZ iram addr,reladdr
-			pc = --ram[rom[++pc]] ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --ram[rom[++pc]] ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 		case 0xD8: // DJNZ R0,reladdr
-			pc = --R0 ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --R0 ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 		case 0xD9: // DJNZ R1,reladdr
-			pc = --R1 ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --R1 ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 		case 0xDA: // DJNZ R2,reladdr
-			pc = --R2 ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --R2 ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 		case 0xDB: // DJNZ R3,reladdr
-			pc = --R3 ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --R3 ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 		case 0xDC: // DJNZ R4,reladdr
-			pc = --R4 ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --R4 ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 		case 0xDD: // DJNZ R5,reladdr
-			pc = --R5 ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --R5 ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 		case 0xDE: // DJNZ R6,reladdr
-			pc = --R6 ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --R6 ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 		case 0xDF: // DJNZ R7,reladdr
-			pc = --R7 ? pc + (char)rom[pc + 1] - 2 : pc;
+			pc = --R7 ? pc + (char)rom[pc + 1] : pc;
 			pc++;
 			break;
 
@@ -1177,7 +1238,7 @@ void emu_exec_instr(void)
 		
 		// RET
 		case 0x22: // RET
-			pc = (ram[ SP ] << 4) | ram[ SP - 1 ];
+			pc = (ram[ SP ] << 8) | ram[ SP - 1 ];
 			SP -= 2;
 			break;
 		case 0x00: // NOP
