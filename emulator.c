@@ -298,6 +298,13 @@ void emu_exec_instr(void)
 	word tmpWord;
 	switch(opcode)
 	{
+		case 0x02: // LJMP code addr
+			pc = ( rom[pc + 1] << 8 ) | rom[pc + 2];
+			pc--;
+			break;
+		case 0xA5: // ???
+			// ???
+			break;
 		case 0x12: // LCALL code addr
 			tmpWord = pc + 3;
 			ram[ ++SP ] = tmpWord & 0x0F;
@@ -802,8 +809,8 @@ void emu_exec_instr(void)
 		case 0x72: // ORL C,bit addr
 			setPSW(PSW_CY_POS, PSW_CY | getBit( rom[++pc] ));
 			break;
-		case 0xA0: // ORL C,/bit addr // TODO
-			fprintf(stderr, "opcode undefined: ORL C,/bit addr\n");
+		case 0xA0: // ORL C,/bit addr
+			setPSW(PSW_CY, getBit(rom[ ++pc ]) | PSW_CY);
 			break;
 
 		// AND
@@ -854,7 +861,7 @@ void emu_exec_instr(void)
 		case 0x82: // ANL C,bit addr
 			setPSW(PSW_CY_POS, PSW_CY & getBit( rom[++pc] ));
 			break;
-		case 0xB0: // ANL C,/bit addr // TODO
+		case 0xB0: // ANL C,/bit addr
 			 setPSW(PSW_CY, getBit(rom[ ++pc ]) & PSW_CY);
 			break;
 
@@ -1004,35 +1011,30 @@ void emu_exec_instr(void)
 			pc += 2;
 			break;
 		
-		// JC
-		case 0x40:
+		case 0x40: // JC reladdr
 			if (PSW_CY)
 				pc = pc + (char)rom[ pc + 1 ];
 			else
 				pc++;
 			break;
-		// JNC
-		case 0x50:
+		case 0x50: // JNC reladdr
 			if (!PSW_CY)
 				pc = pc + (char)rom[ pc + 1 ];
 			else
 				pc++;
 			break;
-		// JZ
-		case 0x60:
+		case 0x60: // JZ reladdr
 			if (!a)
 				pc = pc + (char)rom[ pc + 1 ];
 			else
 				pc++;
 			break;
-		// JNZ
-		case 0x70:
+		case 0x70: // JNZ reladdr
 			if (a)
 				pc = pc + (char)rom[ pc + 1 ];
 			else
 				pc++;
 			break;
-		// SJMP
 		case 0x80: // SJMP reladdr
 			pc = pc + (char)rom[ pc + 1 ] + instructions[0x80].no_of_bytes - 1;
 			break;
