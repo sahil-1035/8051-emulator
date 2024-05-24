@@ -298,63 +298,92 @@ void emu_exec_instr(void)
 	word tmpWord;
 	switch(opcode)
 	{
+		case 0x12: // LCALL code addr
+			tmpWord = pc + 3;
+			ram[ ++SP ] = tmpWord & 0x0F;
+			ram[ ++SP ] = tmpWord & 0xF0;
+			pc = ( rom[ pc + 1 ] << 8 ) | rom[ pc + 2 ];
+			pc--;
+			break;
 		case 0x11: // ACALL page0
+			tmpWord = pc;
+			pc += 2;
 			ram[ ++SP ] = pc & 0x0F;
 			ram[ ++SP ] = pc & 0xF0;
-			tmpWord = pc;
 			pc = pc & 0b1111100000000000;
 			pc |= rom[ tmpWord + 1 ];
 			pc |= (0) << 8;
 			pc--;
 			break;
 		case 0x31: // ACALL page1
+			tmpWord = pc;
+			pc += 2;
 			ram[ ++SP ] = pc & 0x0F;
 			ram[ ++SP ] = pc & 0xF0;
 			pc = pc & 0b1111100000000000;
-			pc |= rom[ pc + 1 ];
+			pc |= rom[ tmpWord + 1 ];
 			pc |= (1) << 8;
+			pc--;
 			break;
 		case 0x51: // ACALL page2
+			tmpWord = pc;
+			pc += 2;
 			ram[ ++SP ] = pc & 0x0F;
 			ram[ ++SP ] = pc & 0xF0;
 			pc = pc & 0b1111100000000000;
-			pc |= rom[ pc + 1 ];
+			pc |= rom[ tmpWord + 1 ];
 			pc |= (2) << 8;
+			pc--;
 			break;
 		case 0x71: // ACALL page3
+			tmpWord = pc;
+			pc += 2;
 			ram[ ++SP ] = pc & 0x0F;
 			ram[ ++SP ] = pc & 0xF0;
 			pc = pc & 0b1111100000000000;
-			pc |= rom[ pc + 1 ];
+			pc |= rom[ tmpWord + 1 ];
 			pc |= (3) << 8;
+			pc--;
 			break;
 		case 0x91: // ACALL page4
+			tmpWord = pc;
+			pc += 2;
 			ram[ ++SP ] = pc & 0x0F;
 			ram[ ++SP ] = pc & 0xF0;
 			pc = pc & 0b1111100000000000;
-			pc |= rom[ pc + 1 ];
+			pc |= rom[ tmpWord + 1 ];
 			pc |= (4) << 8;
+			pc--;
 			break;
 		case 0xB1: // ACALL page5
+			tmpWord = pc;
+			pc += 2;
 			ram[ ++SP ] = pc & 0x0F;
 			ram[ ++SP ] = pc & 0xF0;
 			pc = pc & 0b1111100000000000;
-			pc |= rom[ pc + 1 ];
+			pc |= rom[ tmpWord + 1 ];
 			pc |= (5) << 8;
+			pc--;
 			break;
 		case 0xD1: // ACALL page6
+			tmpWord = pc;
+			pc += 2;
 			ram[ ++SP ] = pc & 0x0F;
 			ram[ ++SP ] = pc & 0xF0;
 			pc = pc & 0b1111100000000000;
-			pc |= rom[ pc + 1 ];
+			pc |= rom[ tmpWord + 1 ];
 			pc |= (6) << 8;
+			pc--;
 			break;
 		case 0xF1: // ACALL page7
+			tmpWord = pc;
+			pc += 2;
 			ram[ ++SP ] = pc & 0x0F;
 			ram[ ++SP ] = pc & 0xF0;
 			pc = pc & 0b1111100000000000;
-			pc |= rom[ pc + 1 ];
+			pc |= rom[ tmpWord + 1 ];
 			pc |= (7) << 8;
+			pc--;
 			break;
 
 		// AJMP
@@ -1240,6 +1269,7 @@ void emu_exec_instr(void)
 		case 0x22: // RET
 			pc = (ram[ SP ] << 8) | ram[ SP - 1 ];
 			SP -= 2;
+			pc--;
 			break;
 		case 0x00: // NOP
 			break;
