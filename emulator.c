@@ -137,7 +137,7 @@ void emu_clear_ram(void)
 }
 void add_to_A(byte addend)
 {
-	if ( a < ( a + addend))
+	if ( a > ( a + addend))
 		setPSW(PSW_CY_POS, 1);
 	if ( (a & 0b00001111) < ((a + addend) & 0b00001111) )
 		setPSW(PSW_AC_POS, 1);
@@ -511,7 +511,7 @@ void emu_exec_instr(void)
 
 		// ADD
 		case 0x25: // ADD A,iram addr
-			add_to_A(rom[++pc]);
+			add_to_A(ram[rom[++pc]]);
 			break;
 		case 0x26: // ADD A,@R0
 			add_to_A(ram[R0]);
@@ -1013,25 +1013,25 @@ void emu_exec_instr(void)
 		
 		case 0x40: // JC reladdr
 			if (PSW_CY)
-				pc = pc + (char)rom[ pc + 1 ];
+				pc = pc + (char)rom[ pc + 1 ] + 1;
 			else
 				pc++;
 			break;
 		case 0x50: // JNC reladdr
 			if (!PSW_CY)
-				pc = pc + (char)rom[ pc + 1 ];
+				pc = pc + (char)rom[ pc + 1 ] + 1;
 			else
 				pc++;
 			break;
 		case 0x60: // JZ reladdr
 			if (!a)
-				pc = pc + (char)rom[ pc + 1 ];
+				pc = pc + (char)rom[ pc + 1 ] + 1;
 			else
 				pc++;
 			break;
 		case 0x70: // JNZ reladdr
 			if (a)
-				pc = pc + (char)rom[ pc + 1 ];
+				pc = pc + (char)rom[ pc + 1 ] + 1;
 			else
 				pc++;
 			break;
